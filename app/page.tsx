@@ -31,21 +31,25 @@ export default function Home() {
           ☰
         </button>
 
-        {/* 中間選單 */}
-        <div className="flex gap-2">
-          <button className="w-[80px] h-[36px] rounded-[8%] bg-gray-100 text-gray-700 text-sm flex items-center justify-center gap-1">
-            ⭐ 收藏
+        {/* 右側：收藏、分享、更多 */}
+        <div className="flex items-center gap-2 ml-auto">
+          {/* 收藏 */}
+          <button className="w-[80px] h-[36px] rounded-[8%] bg-gray-100 flex items-center justify-center">
+            <img src="/icons/collection.png" alt="收藏" className="w-[18px] h-[18px]" />
+            收藏
           </button>
-          <button className="w-[80px] h-[36px] rounded-[8%] bg-gray-100 text-gray-700 text-sm flex items-center justify-center gap-1">
-            📤 分享
+          {/* 分享 */}
+          <button className="w-[80px] h-[36px] rounded-[8%] bg-gray-100 flex items-center justify-center">
+            <img src="/icons/share.png" alt="分享" className="w-[18px] h-[18px]" />
+            分享
+          </button>
+          {/* ⋯ 更多 */}
+          <button className="w-[36px] h-[36px] rounded-[8%] bg-gray-200 flex items-center justify-center text-lg">
+            ⋯
           </button>
         </div>
-
-        {/* ⋯ 更多 */}
-        <button className="w-[36px] h-[36px] rounded-[8%] bg-gray-200 flex items-center justify-center text-lg">
-          ⋯
-        </button>
       </header>
+
 
       {/* Chat Content */}
       <main className="flex-1 overflow-y-auto px-4 pt-4 space-y-4">
@@ -65,16 +69,16 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="sticky bottom-0 bg-white px-4 py-2 flex items-end gap-2 border-t">
-        {/* Input */}
+      <footer className="sticky bottom-0 bg-white px-4 py-2 flex items-center gap-2 border-t">
+        {/* 輸入欄位 */}
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="輸入問題..."
-          className="w-[299px] h-[36px] rounded-[8%] px-3 border border-gray-300 focus:outline-none"
+          className="flex-1 h-[36px] rounded-[8%] px-3 border border-gray-300 focus:outline-none"
         />
-        {/* Submit */}
+        {/* 送出按鈕 */}
         <button
           onClick={handleSubmit}
           className="w-[36px] h-[36px] rounded-[8%] bg-black text-white flex items-center justify-center text-lg"
@@ -82,6 +86,7 @@ export default function Home() {
           ➤
         </button>
       </footer>
+
     </div>
   )
 }
