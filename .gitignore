@@ -1,3 +1,34 @@
-node_modules
-.next
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Output directories
+.next/
+out/
+dist/
+build/
+
+# Local env
 .env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# System files
+.DS_Store
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Misc
+*.swp
+*.swo
+*.zip
+
+# macOS
+__MACOSX/
