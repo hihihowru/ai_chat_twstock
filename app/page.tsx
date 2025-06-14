@@ -33,11 +33,11 @@ export default function Home() {
 
         {/* 中間選單 */}
         <div className="flex gap-2">
-          <button className="w-[80px] h-[36px] rounded-[8%] bg-gray-100 text-gray-700 text-sm">
-            收藏
+          <button className="w-[80px] h-[36px] rounded-[8%] bg-gray-100 text-gray-700 text-sm flex items-center justify-center gap-1">
+            ⭐ 收藏
           </button>
-          <button className="w-[108px] h-[36px] rounded-[8%] bg-black text-white text-sm">
-            專業語氣
+          <button className="w-[80px] h-[36px] rounded-[8%] bg-gray-100 text-gray-700 text-sm flex items-center justify-center gap-1">
+            📤 分享
           </button>
         </div>
 
@@ -65,7 +65,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="sticky bottom-0 bg-white px-4 py-2 flex items-center gap-2 border-t">
+      <footer className="sticky bottom-0 bg-white px-4 py-2 flex items-end gap-2 border-t">
         {/* Input */}
         <input
           type="text"
