@@ -1,22 +1,50 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { resolveStockCode } from '../lib/alias'
+import { fetchCmoneyNews } from '../lib/news'
 
 export default function Home() {
   const [input, setInput] = useState('')
   const [history, setHistory] = useState<{ role: 'user' | 'ai'; content: string }[]>([])
   const bottomRef = useRef<HTMLDivElement>(null)
 
-  const handleSubmit = () => {
-    if (!input.trim()) return
-    const userMsg = { role: 'user' as const, content: input }
-    const aiMsg = {
-      role: 'ai' as const,
-      content: `這是 AI 回覆：「${input}」`,
-    }
-    setHistory((prev) => [...prev, userMsg, aiMsg])
-    setInput('')
+  
+
+const handleSubmit = async () => {
+  if (!input.trim()) return
+
+  const userMsg = { role: 'user' as const, content: input }
+  const stockId = resolveStockCode(input)
+
+  let aiMsg = {
+    role: 'ai' as const,
+    content: '目前無法辨識這檔股票，請再提供一次股票名稱或代號。',
   }
+
+  if (stockId) {
+    const news = await fetchCmoneyNews(stockId)
+    if (news.length > 0) {
+      const summary = news
+        .slice(0, 3)
+        .map((n) => `📰 [${n.time}]\n${n.title}`)
+        .join('\n\n')
+      aiMsg = {
+        role: 'ai' as const,
+        content: `根據 CMoney 新聞，${stockId} 近期可能受到以下事件影響：\n\n${summary}`,
+      }
+    } else {
+      aiMsg = {
+        role: 'ai' as const,
+        content: `找不到 ${stockId} 的即時新聞資料，請稍後再試。`,
+      }
+    }
+  }
+
+  setHistory((prev) => [...prev, userMsg, aiMsg])
+  setInput('')
+}
+
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
