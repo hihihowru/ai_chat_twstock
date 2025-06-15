@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     const { question, stockId, keyword } = await req.json()
 
     const cmoneyRes = await fetch(
-      `http://localhost:8000/proxy-news?stockId=${stockId}`
+      `${process.env.NEXT_PUBLIC_PROXY_URL}/proxy-news?stockId=${stockId}`
     )
     const cmoneyData = await cmoneyRes.json()
     const cmoneyText = (cmoneyData.Data || [])
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       .join('\n')
 
     const mnewsRes = await fetch(
-      `http://localhost:8000/proxy-mnews?keyword=${keyword}`
+      `${process.env.NEXT_PUBLIC_PROXY_URL}/proxy-news?stockId=${stockId}`
     )
     const mnewsData = await mnewsRes.json()
     const mnewsText = (mnewsData.items || [])
