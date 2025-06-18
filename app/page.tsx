@@ -92,7 +92,7 @@ export default function Page() {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="輸入股票名稱或代號..."
+          placeholder="輸入提問、股票名稱或代號，幫你做即時新聞事件彙整..."
           className="flex-1 h-[36px] rounded-[8%] px-3 border border-gray-300 focus:outline-none"
         />
         <button
