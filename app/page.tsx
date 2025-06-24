@@ -7,7 +7,7 @@ import FooterNav from "./components/FooterNav";
 import { MediatekSnapshotCard } from "./components/StockSnapshotCard";
 
 const marketIndices = [
-  { name: 'NASDAQ', img: '/icons/nasdaq.png' },
+  { name: 'NASDAQ', img: '/icons/nasdaq.png' }, 
   { name: 'S&P 500', img: '/icons/sp500.png' },
   { name: '日經225', img: '/icons/nikkei.png' },
   { name: '上證A股', img: '/icons/sse.png' },

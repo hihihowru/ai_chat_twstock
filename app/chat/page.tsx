@@ -1,6 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import StockSnapshotCard from '../components/StockSnapshotCard';
+import AskQuestionBar from '../components/AskQuestionBar';
 
 export default function ChatPage() {
   const [page, setPage] = useState<'main' | 'teslaCard'>('main');
@@ -36,6 +37,7 @@ export default function ChatPage() {
           <StockSnapshotCard />
         </div>
       )}
+      <AskQuestionBar onSubmit={q => alert('你問了: ' + q)} />
       {/* FooterNav or chat footer */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur border-t border-gray-200 py-3 flex justify-center z-10">
         <button

@@ -4,6 +4,7 @@ import FooterNav from '../components/FooterNav';
 import ThreadItem from '../components/ThreadItem';
 import AiReplyModal from '../components/AiReplyModal';
 import CardFooter from '../components/CardFooter';
+import AskQuestionBar from '../components/AskQuestionBar';
 import { useState } from 'react';
 
 const mockThreads = [
@@ -347,6 +348,7 @@ export default function ThreadsPage() {
         ))}
       </div>
       <AiReplyModal open={aiModalOpen} onClose={() => setAiModalOpen(false)} defaultText={modalQuestion} />
+      <AskQuestionBar onSubmit={q => alert('你問了: ' + q)} />
       <FooterNav active="threads" />
     </div>
   );
