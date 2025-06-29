@@ -1,40 +1,91 @@
 "use client";
 import React, { useRef, useState, useEffect } from 'react';
 import { Mic, Send } from 'lucide-react';
+import { InvestmentReportCard, InvestmentSection } from '../components/InvestmentReportCard';
 
-const SYSTEM_LOGS = [
-  '🔍 擷取新聞資料中…',
-  '📈 分析技術線圖中…',
-  '🧠 總結觀點中…',
-];
+const sectionColors: Record<string, string> = {
+  '📌 問題簡述與事件背景': 'bg-gray-100',
+  '📉 股價異動說明': 'bg-yellow-50',
+  '📊 財務狀況分析': 'bg-blue-50',
+  '🌐 產業與市場環境分析': 'bg-green-50',
+  '💡 投資策略建議': 'bg-indigo-50',
+  '⚠️ 投資風險提醒': 'bg-red-50',
+};
+
+const buttonColor = (text: string) => {
+  if (text.includes('短期')) return 'bg-red-500';
+  if (text.includes('中期')) return 'bg-yellow-500';
+  if (text.includes('長期')) return 'bg-blue-500';
+  return 'bg-gray-400';
+};
+
+interface ReportData {
+  stockName: string;
+  stockId: string;
+  sections: InvestmentSection[];
+}
 
 export default function MVPChatPage() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<{ role: 'user' | 'system' | 'log'; content: string }[]>([]);
+  const [report, setReport] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
+  }, [messages, loading, report]);
+
+  useEffect(() => {
+    // 離開頁面時關閉 SSE
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
+  }, []);
 
   const handleSend = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const value = input.trim();
-    if (!value) return;
-    setMessages((prev) => [...prev, { role: 'user', content: value }]);
-    setInput('');
+    e?.preventDefault();
+    if (!input.trim()) return;
+    setMessages((prev) => [...prev, { role: 'user', content: input }]);
     setLoading(true);
-    // 隨機選一個 log
-    const log = SYSTEM_LOGS[Math.floor(Math.random() * SYSTEM_LOGS.length)];
-    setMessages((prev) => [...prev, { role: 'log', content: log }]);
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev.slice(0, -1), // 移除 log
-        { role: 'system', content: '這是系統的回覆：' + value },
-      ]);
+    setReport(null);
+
+    // 關閉舊的 SSE 連線
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+    }
+
+    // 串接 SSE API
+    const url = `http://localhost:8000/api/ask-sse?question=${encodeURIComponent(input)}`;
+    const es = new EventSource(url);
+    eventSourceRef.current = es;
+
+    es.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.log) {
+          setMessages((prev) => [...prev, { role: 'log', content: data.log }]);
+        }
+        if (data.report) {
+          setReport(data.report);
+          setLoading(false);
+        }
+      } catch (err) {
+        // 忽略解析錯誤
+      }
+    };
+    es.onerror = () => {
+      es.close();
       setLoading(false);
-    }, 1000);
+    };
+    es.addEventListener('end', () => {
+      es.close();
+      setLoading(false);
+    });
+    setInput('');
   };
 
   const handleMic = () => {
@@ -47,7 +98,7 @@ export default function MVPChatPage() {
       <div className="px-4 pt-4 pb-2 text-xs text-gray-400 font-medium">/mvp</div>
       {/* Chat area */}
       <div className="flex-1 overflow-y-auto px-2 pb-32 sm:px-0">
-        <div className="max-w-md mx-auto flex flex-col gap-3 pt-2">
+        <div className="max-w-4xl mx-auto flex flex-col gap-3 pt-2">
           {messages.map((msg, idx) =>
             msg.role === 'user' ? (
               <div key={idx} className="flex w-full">
@@ -66,6 +117,17 @@ export default function MVPChatPage() {
                 <div className="text-xs text-gray-400 px-4 py-1 ml-0 mr-auto">{msg.content}</div>
               </div>
             )
+          )}
+          {/* 投資分析報告卡片 */}
+          {report && (
+            <div className="mt-6">
+              <InvestmentReportCard
+                stockName={report.stockName}
+                stockId={report.stockId}
+                sections={report.sections}
+                onBookmark={() => alert('收藏功能開發中')}
+              />
+            </div>
           )}
           <div ref={bottomRef} />
         </div>
