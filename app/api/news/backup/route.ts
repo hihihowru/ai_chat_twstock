@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     // 利用 alias map 解析 stockId
     let resolvedId: string | null = null
     for (const [stockId, aliases] of Object.entries(aliasMap)) {
-      if (aliases.some(alias => rawInput.includes(alias))) {
+      if (Array.isArray(aliases) && aliases.some(alias => rawInput.includes(alias))) {
         resolvedId = stockId
         console.log('[API] 成功解析為 stockId:', resolvedId)
         break
