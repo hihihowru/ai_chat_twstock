@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, StarOff, ChevronDown, ChevronUp } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 // 支援新的後端資料結構
 export interface InvestmentSection {
@@ -43,6 +44,7 @@ export interface InvestmentReportData {
   stockId: string;
   sections: InvestmentSection[];
   summary?: string;
+  paraphrased_prompt?: string;
 }
 
 interface InvestmentReportCardProps extends InvestmentReportData {
@@ -77,51 +79,33 @@ const sectionColors: { [key: string]: string } = {
   "📋": "from-yellow-50 to-amber-50"
 };
 
-// 渲染包含HTML連結的內容
+// 修改 renderContent 來源標記處理，使用 SourceButtonWithPopup
 const renderContent = (content: any, sources?: Array<{title: string, link: string} | string>) => {
-  // 確保 content 是字串
   if (typeof content !== 'string') {
     return <span>內容格式錯誤</span>;
   }
-  
-  // 處理來源標記 [來源X]
-  const processedContent = content.replace(/\[來源(\d+)\]/g, (match, sourceIndex) => {
-    const index = parseInt(sourceIndex) - 1;
-    if (sources && sources[index]) {
-      const source = sources[index];
-      let title = "";
-      let link = "";
-      
-      if (typeof source === 'string') {
-        title = source;
-        link = "";
-      } else if (source && typeof source === 'object' && 'title' in source) {
-        title = source.title;
-        link = source.link || "";
-      } else {
-        // 如果 source 是其他格式的物件，轉換為字串
-        title = String(source);
-        link = "";
-      }
-      
-      return `<button class='inline-flex items-center justify-center w-6 h-6 bg-gray-200 text-gray-700 rounded-md text-xs font-bold mx-1 hover:bg-gray-300 relative group' style='vertical-align:middle;'>${sourceIndex}<span class='absolute z-10 left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto'><div class='text-sm font-medium text-gray-800 mb-1'>${title}</div>${link ? `<div class='text-xs text-blue-600 break-all'><a href='${link}' target='_blank' rel='noopener noreferrer'>${link}</a></div>` : ''}</span></button>`;
-    }
-    return match;
-  });
-  
-  // 將換行符轉換為 <br> 標籤，並使用 dangerouslySetInnerHTML 來渲染包含 HTML 的內容
+  // 將多個 [來源X] 連續出現的 pattern 換成一個 icon
+  const multiSourcePattern = /(\[來源\d+\])+$/;
+  const match = content.match(multiSourcePattern);
+  let mainText = content;
+  let showSources = false;
+  if (match && sources && sources.length > 0) {
+    mainText = content.replace(multiSourcePattern, '');
+    showSources = true;
+  }
+  // 其餘內容用 markdown 處理
   return (
-    <div 
-      dangerouslySetInnerHTML={{ 
-        __html: processedContent.replace(/\n/g, '<br />') 
-      }} 
-    />
+    <span className="whitespace-pre-line">
+      <ReactMarkdown>{mainText}</ReactMarkdown>
+      {showSources && <SourceIconWithPopup sources={sources} />}
+    </span>
   );
 };
 
 // 表格渲染元件
 function FinancialTable({ table, highlightKey = 'highlight' }: { table: any[], highlightKey?: string }) {
-  if (!table || table.length === 0) return null;
+  if (!Array.isArray(table) || table.length === 0) return <div className="text-gray-400 text-sm">無資料</div>;
+  if (typeof table[0] !== 'object') return <div className="text-red-500 text-sm">資料格式錯誤</div>;
   const keys = Object.keys(table[0]).filter(k => k !== highlightKey);
   return (
     <div className="overflow-x-auto">
@@ -138,11 +122,15 @@ function FinancialTable({ table, highlightKey = 'highlight' }: { table: any[], h
             <tr key={i} className={`${row[highlightKey] ? "bg-amber-50" : "bg-white"} hover:bg-gray-50 transition-colors`}>
               {keys.map(k => (
                 <td key={k} className="px-4 py-3 border-b border-gray-100">
-                  {/* 成長率欄位用 button 樣式 */}
-                  {k.match(/季增率|年增率|成長|增率/) && typeof row[k] === 'string' ? (
+                  {/* 成長率欄位用 button 樣式，紅色=好，綠色=跌 */}
+                  {k.match(/成長率/) && typeof row[k] === 'object' && row[k] !== null ? (
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      row[k].includes('-') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-                    }`}>{row[k]}</span>
+                      row[k].color === 'red' ? 'bg-red-100 text-red-700' :
+                      row[k].color === 'green' ? 'bg-green-100 text-green-700' :
+                      'bg-gray-100 text-gray-500'
+                    }`}>
+                      {row[k].value}
+                    </span>
                   ) : (
                     <span className="text-gray-700">{row[k]}</span>
                   )}
@@ -156,10 +144,65 @@ function FinancialTable({ table, highlightKey = 'highlight' }: { table: any[], h
   );
 }
 
-// Tab 元件
+// 新增：將財報原始表格轉換為年度/季度格式的 table
+function buildQuarterTable(rawTable, valueKey) {
+  if (!Array.isArray(rawTable)) return { years: [], table: [] };
+  const years = Array.from(new Set(rawTable.map(row => row.季度.slice(0, 4)))).sort();
+  const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
+  const table = quarters.map(q => {
+    const row = { quarter: q };
+    years.forEach(year => {
+      const quarterKey = `${year}${q}`;
+      const found = rawTable.find(r => r.季度 === quarterKey);
+      row[year] = found ? found[valueKey] : 'N/A';
+    });
+    return row;
+  });
+  return { years, table };
+}
+
+// 修改 TabsComponent 讓 EPS/營收/營業利益 tab 用財報原始表格渲染
 function TabsComponent({ tabs }: { tabs: Array<{ tab: string; content: string; table?: any[] }> }) {
   const [activeTab, setActiveTab] = useState(0);
-  
+  // 找到財報原始表格
+  const rawTableTab = tabs.find(tab => tab.tab.includes('財報原始表格'));
+  const rawTable = rawTableTab?.table || [];
+  // tab 對應的 key
+  const tabValueKeyMap = {
+    'EPS': '每股盈餘',
+    '營收': '營收',
+    '營業利益': '營業利益',
+  };
+  // 判斷是否要用原始表格渲染
+  const currentTab = tabs[activeTab];
+  let customTable = null;
+  if (rawTable.length > 0 && tabValueKeyMap[currentTab.tab]) {
+    const { years, table } = buildQuarterTable(rawTable, tabValueKeyMap[currentTab.tab]);
+    customTable = (
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-sm border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+          <thead>
+            <tr className="bg-gray-50">
+              <th className="px-4 py-3 text-left font-semibold text-gray-700 border-b border-gray-200">季度</th>
+              {years.map(y => (
+                <th key={y} className="px-4 py-3 text-left font-semibold text-gray-700 border-b border-gray-200">{y}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {table.map((row, i) => (
+              <tr key={i} className="bg-white hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3 border-b border-gray-100 font-semibold">{row.quarter}</td>
+                {years.map(y => (
+                  <td key={y} className="px-4 py-3 border-b border-gray-100">{row[y]}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
   return (
     <div className="mt-4">
       {/* Tab 標籤 */}
@@ -178,11 +221,11 @@ function TabsComponent({ tabs }: { tabs: Array<{ tab: string; content: string; t
           </button>
         ))}
       </div>
-      
       {/* Tab 內容 */}
       <div className="tab-content">
-        <div className="mb-6 text-gray-700 leading-relaxed">{renderContent(tabs[activeTab].content)}</div>
-        {tabs[activeTab].table && <FinancialTable table={tabs[activeTab].table!} />}
+        <div className="mb-6 text-gray-700 leading-relaxed">{renderContent(currentTab.content)}</div>
+        {/* EPS/營收/營業利益 tab 用原始表格渲染，其他 tab 用原本的 table */}
+        {customTable || (currentTab.table && <FinancialTable table={currentTab.table!} />)}
       </div>
     </div>
   );
@@ -288,13 +331,110 @@ function SourcesCounter({ sources, onToggle }: { sources: Array<string | {title:
   );
 }
 
+// 修改 SourcesCounter 來源 popup UX
+function SourceButtonWithPopup({ sourceIndex, title, link }: { sourceIndex: number, title: string, link?: string }) {
+  const [show, setShow] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  return (
+    <span className="relative inline-block align-middle">
+      <button
+        ref={btnRef}
+        className="inline-flex items-center justify-center w-6 h-6 bg-gray-200 text-gray-700 rounded-md text-xs font-bold mx-1 hover:bg-gray-300 focus:bg-gray-300 focus:outline-none"
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setTimeout(() => setShow(false), 100)}
+        onFocus={() => setShow(true)}
+        onBlur={() => setShow(false)}
+        tabIndex={0}
+        aria-label={`資料來源 ${sourceIndex}`}
+      >
+        {sourceIndex}
+      </button>
+      {show && (
+        <div
+          className="absolute z-10 left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg p-3 pointer-events-auto"
+          onMouseEnter={() => setShow(true)}
+          onMouseLeave={() => setShow(false)}
+        >
+          <div className="text-sm font-medium text-gray-800 mb-1">{title}</div>
+          {link && (
+            <div className="text-xs text-blue-600 break-all">
+              <a href={link} target="_blank" rel="noopener noreferrer">{link}</a>
+            </div>
+          )}
+        </div>
+      )}
+    </span>
+  );
+}
+
+// 修改 renderContent：遇到多個 [來源X] 連續出現時，改為只顯示一個 icon
+function SourceIconWithPopup({ sources }: { sources: Array<{title: string, link: string} | string> }) {
+  const [show, setShow] = useState(false);
+  let hoverAreaRef = useRef<HTMLSpanElement>(null);
+  const handleMouseEnter = () => setShow(true);
+  const handleMouseLeave = (e: React.MouseEvent) => {
+    if (hoverAreaRef.current && hoverAreaRef.current.contains(e.relatedTarget as Node)) return;
+    setShow(false);
+  };
+  return (
+    <span className="relative inline-block align-middle ml-1" ref={hoverAreaRef}>
+      <button
+        className="inline-flex items-center justify-center w-6 h-6 bg-gray-200 text-gray-700 rounded-md text-xs font-bold hover:bg-gray-300 focus:bg-gray-300 focus:outline-none"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onFocus={handleMouseEnter}
+        onBlur={() => setShow(false)}
+        tabIndex={0}
+        aria-label={`資料來源${sources.length}`}
+        style={{ verticalAlign: 'super', marginLeft: 2 }}
+      >
+        <sup>{sources.length}</sup>
+      </button>
+      {show && (
+        <div
+          className="absolute z-10 left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg p-3 pointer-events-auto"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
+          <div className="text-sm font-medium text-gray-800 mb-2">資料來源</div>
+          <ul className="text-xs text-gray-700">
+            {sources.map((source, idx) => {
+              let title = "";
+              let link = "";
+              if (typeof source === 'string') {
+                title = source;
+              } else if (source && typeof source === 'object' && 'title' in source) {
+                title = source.title;
+                link = source.link || "";
+              } else {
+                title = String(source);
+              }
+              return (
+                <li key={idx} className="mb-1">
+                  {title}
+                  {link && (
+                    <span className="ml-1 text-blue-600 break-all">
+                      <a href={link} target="_blank" rel="noopener noreferrer">{link}</a>
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </span>
+  );
+}
+
 export const InvestmentReportCard: React.FC<InvestmentReportCardProps> = ({
   stockName,
   stockId,
   sections,
   summary,
   onBookmark,
-  isBookmarked
+  isBookmarked,
+  paraphrased_prompt
 }) => {
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({});
   const [showSources, setShowSources] = useState<{[key: string]: boolean}>({});
@@ -321,7 +461,12 @@ export const InvestmentReportCard: React.FC<InvestmentReportCardProps> = ({
           <h2 className="text-3xl font-bold text-gray-800 mb-3">
             {stockName} <span className="text-gray-500 text-2xl">({stockId})</span>
           </h2>
-          <h3 className="text-xl text-gray-600 mb-2 font-medium">投資分析報告</h3>
+          <div className="flex items-center gap-2 mb-2">
+            <h3 className="text-xl text-gray-600 font-medium">投資分析報告</h3>
+            {paraphrased_prompt && (
+              <span className="text-sm text-gray-500 italic ml-2">—— {paraphrased_prompt}</span>
+            )}
+          </div>
           {summary && (
             <p className="text-sm text-gray-500 italic">{summary}</p>
           )}
@@ -365,14 +510,6 @@ export const InvestmentReportCard: React.FC<InvestmentReportCardProps> = ({
                     <span>{sectionTitle}</span>
                   </h3>
                 </div>
-                
-                {/* 來源計數器 */}
-                {section.sources && section.sources.length > 0 && (
-                  <SourcesCounter 
-                    sources={section.sources} 
-                    onToggle={() => toggleSources(sectionTitle)}
-                  />
-                )}
               </div>
 
               {/* Section Content */}
@@ -394,7 +531,9 @@ export const InvestmentReportCard: React.FC<InvestmentReportCardProps> = ({
                       <div className="space-y-5">
                         {section.cards.map((card, cardIndex) => (
                           <div key={cardIndex} className="bg-white/70 rounded-xl p-5 shadow-md border border-white/50">
-                            <h4 className="font-semibold text-gray-800 mb-3 text-lg">{card.title}</h4>
+                            <div className="flex items-center mb-2">
+                              <span className="font-semibold text-lg">{card.title}</span>
+                            </div>
                             {card.content && <div className="mb-3 text-gray-700">{renderContent(card.content, section.sources)}</div>}
                             {card.suggestion && <div className="mb-3 text-blue-700 font-medium">{card.suggestion}</div>}
                             {card.bullets && card.bullets.length > 0 && (

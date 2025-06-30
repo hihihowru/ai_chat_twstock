@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { OpenAI } from 'openai'
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-
 export async function POST(req: NextRequest) {
   try {
     const { question, stockId, keyword } = await req.json()
+
+    // 延遲初始化 OpenAI client
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
     // 🔁 取得 CMoney 資料
     const cmoneyRes = await fetch(

@@ -27,15 +27,14 @@ interface ReportData {
 
 export default function MVPChatPage() {
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<{ role: 'user' | 'system' | 'log'; content: string }[]>([]);
-  const [report, setReport] = useState<ReportData | null>(null);
+  const [messages, setMessages] = useState<{ role: 'user' | 'system' | 'log'; content: string; report?: any }[]>([]);
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading, report]);
+  }, [messages, loading]);
 
   useEffect(() => {
     // 離開頁面時關閉 SSE
@@ -51,7 +50,6 @@ export default function MVPChatPage() {
     if (!input.trim()) return;
     setMessages((prev) => [...prev, { role: 'user', content: input }]);
     setLoading(true);
-    setReport(null);
 
     // 關閉舊的 SSE 連線
     if (eventSourceRef.current) {
@@ -71,7 +69,7 @@ export default function MVPChatPage() {
           setMessages((prev) => [...prev, { role: 'log', content: data.log }]);
         }
         if (data.report) {
-          setReport(data.report);
+          setMessages((prev) => [...prev, { role: 'system', content: 'report', report: data.report }]);
           setLoading(false);
         }
       } catch (err) {
@@ -107,6 +105,16 @@ export default function MVPChatPage() {
                   {msg.content}
                 </div>
               </div>
+            ) : msg.role === 'system' && msg.content === 'report' ? (
+              <div key={idx} className="mt-6">
+                <InvestmentReportCard
+                  stockName={msg.report.stockName}
+                  stockId={msg.report.stockId}
+                  sections={msg.report.sections}
+                  paraphrased_prompt={msg.report.paraphrased_prompt}
+                  onBookmark={() => alert('收藏功能開發中')}
+                />
+              </div>
             ) : msg.role === 'system' ? (
               <div key={idx} className="flex w-full">
                 <div className="bg-white text-gray-900 rounded-2xl px-4 py-2 max-w-[85vw] sm:max-w-[70%] text-sm break-words shadow ml-0 mr-auto text-left">
@@ -118,17 +126,6 @@ export default function MVPChatPage() {
                 <div className="text-xs text-gray-400 px-4 py-1 ml-0 mr-auto">{msg.content}</div>
               </div>
             )
-          )}
-          {/* 投資分析報告卡片 */}
-          {report && (
-            <div className="mt-6">
-              <InvestmentReportCard
-                stockName={report.stockName}
-                stockId={report.stockId}
-                sections={report.sections}
-                onBookmark={() => alert('收藏功能開發中')}
-              />
-            </div>
           )}
           <div ref={bottomRef} />
         </div>
