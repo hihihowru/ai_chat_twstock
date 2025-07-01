@@ -5,6 +5,7 @@ import React from "react";
 import { ReplyCardHorizontalGlass, ReplyCardVertical } from "./components/ReplyCard";
 import FooterNav from "./components/FooterNav";
 import { MediatekSnapshotCard } from "./components/StockSnapshotCard";
+import SelectedGroupDisplay from "./components/SelectedGroupDisplay";
 
 const marketIndices = [
   { name: 'NASDAQ', img: '/icons/nasdaq.png' }, 
@@ -164,6 +165,11 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex flex-col">
+      {/* 自選股清單顯示 */}
+      <div className="p-6">
+        <SelectedGroupDisplay />
+      </div>
+      
       {/* 資訊區（上方） */}
       <div className={`transition-all duration-500 ${history.length > 0 ? 'max-h-32 overflow-hidden opacity-60' : 'max-h-[600px] opacity-100'}`}>
         <div className="p-6">
@@ -230,7 +236,7 @@ export default function Page() {
                 msg.content.layout === 'vertical' ? (
                   msg.content.whiteTheme ? (
                     <div className="w-full max-w-xl mx-auto">
-                      <div className="bg-white rounded-xl shadow-lg p-4 w-full">
+                      <div className="bg-white/70 backdrop-blur rounded-xl shadow-lg p-4 w-full">
                         <div className="flex items-center mb-2">
                           <img src="/mock/tesla_logo.png" alt="Tesla" className="w-8 h-8 rounded-full mr-2" />
                           <span className="font-bold text-gray-700">Tesla</span>

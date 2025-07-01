@@ -112,7 +112,7 @@ export function MediatekSnapshotCard() {
   const isUp = true;
   const isAfterUp = false;
   return (
-    <div className="w-full max-w-xl mx-auto rounded-2xl shadow-xl bg-white border border-gray-200 text-gray-900 p-6 flex flex-col gap-4">
+    <div className="w-full max-w-xl mx-auto rounded-2xl shadow-xl bg-white/70 backdrop-blur-md border border-white/40 text-gray-900 p-6 flex flex-col gap-4">
       {/* 股票基本資訊區 */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -143,7 +143,7 @@ export function MediatekSnapshotCard() {
             ))}
           </div>
           {/* 簡易折線圖 Placeholder */}
-          <div className="w-64 h-20 bg-white rounded relative flex items-end shadow-inner">
+          <div className="w-64 h-20 bg-white/60 rounded relative flex items-end shadow-inner">
             {/* dotted line for Prev Close */}
             <div className="absolute left-0 right-0 top-1/2 border-t border-dotted border-blue-200" style={{zIndex:1}} />
             {/* 假資料線條 */}

@@ -8,9 +8,10 @@ export interface InvestmentSection {
   section: string;           // 大標題
   cards?: Array<{            // 小卡片陣列
     title: string;
-    content?: string;
+    content?: string | Array<{text: string, sources?: Array<{title: string, link: string} | string>}>;
     suggestion?: string;
     bullets?: string[];
+    conclusion?: string;
   }>;
   tabs?: Array<{             // Tab 陣列
     tab: string;
@@ -45,6 +46,7 @@ export interface InvestmentReportData {
   sections: InvestmentSection[];
   summary?: string;
   paraphrased_prompt?: string;
+  logs?: string[]; // 新增：log 進度
 }
 
 interface InvestmentReportCardProps extends InvestmentReportData {
@@ -79,17 +81,43 @@ const sectionColors: { [key: string]: string } = {
   "📋": "from-yellow-50 to-amber-50"
 };
 
-// 修改 renderContent 來源標記處理，使用 SourceButtonWithPopup
-const renderContent = (content: any, sources?: Array<{title: string, link: string} | string>) => {
+// 修正 renderContent，確保 grey icon 跟在句子後面（inline，不換行），且只顯示該句 sources
+const renderContent = (content: any, defaultSources?: Array<{title: string, link: string} | string>) => {
+  // 如果 content 是 array，表示每句話有自己的 sources
+  if (Array.isArray(content)) {
+    return (
+      <div className="space-y-2">
+        {content.map((item, index) => {
+          if (typeof item === 'string') {
+            return <div key={index} className="whitespace-pre-line"><ReactMarkdown>{item}</ReactMarkdown></div>;
+          }
+          if (typeof item === 'object' && item.text) {
+            return (
+              <div key={index} className="whitespace-pre-line flex items-center flex-wrap">
+                <span className="inline-block"><ReactMarkdown>{item.text}</ReactMarkdown></span>
+                {item.sources && item.sources.length > 0 && (
+                  <SourceIconWithPopup sources={item.sources} />
+                )}
+              </div>
+            );
+          }
+          return <div key={index}>內容格式錯誤</div>;
+        })}
+      </div>
+    );
+  }
+  
+  // 原本的 string 格式處理
   if (typeof content !== 'string') {
     return <span>內容格式錯誤</span>;
   }
+  
   // 將多個 [來源X] 連續出現的 pattern 換成一個 icon
   const multiSourcePattern = /(\[來源\d+\])+$/;
   const match = content.match(multiSourcePattern);
   let mainText = content;
   let showSources = false;
-  if (match && sources && sources.length > 0) {
+  if (match && defaultSources && defaultSources.length > 0) {
     mainText = content.replace(multiSourcePattern, '');
     showSources = true;
   }
@@ -97,7 +125,7 @@ const renderContent = (content: any, sources?: Array<{title: string, link: strin
   return (
     <span className="whitespace-pre-line">
       <ReactMarkdown>{mainText}</ReactMarkdown>
-      {showSources && <SourceIconWithPopup sources={sources} />}
+      {showSources && <SourceIconWithPopup sources={defaultSources} />}
     </span>
   );
 };
@@ -119,7 +147,7 @@ function FinancialTable({ table, highlightKey = 'highlight' }: { table: any[], h
         </thead>
         <tbody>
           {table.map((row, i) => (
-            <tr key={i} className={`${row[highlightKey] ? "bg-amber-50" : "bg-white"} hover:bg-gray-50 transition-colors`}>
+            <tr key={i} className={`${row[highlightKey] ? "bg-amber-50" : "bg-white/80"} hover:bg-gray-50 transition-colors`}>
               {keys.map(k => (
                 <td key={k} className="px-4 py-3 border-b border-gray-100">
                   {/* 成長率欄位用 button 樣式，紅色=好，綠色=跌 */}
@@ -191,7 +219,7 @@ function TabsComponent({ tabs }: { tabs: Array<{ tab: string; content: string; t
           </thead>
           <tbody>
             {table.map((row, i) => (
-              <tr key={i} className="bg-white hover:bg-gray-50 transition-colors">
+              <tr key={i} className="bg-white/80 hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3 border-b border-gray-100 font-semibold">{row.quarter}</td>
                 {years.map(y => (
                   <td key={y} className="px-4 py-3 border-b border-gray-100">{row[y]}</td>
@@ -246,7 +274,7 @@ function FinancialScoresComponent({ scores }: { scores: { eps_score: number; rev
   };
 
   return (
-    <div className="mb-6 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+    <div className="mb-6 p-4 bg-white/80 backdrop-blur rounded-xl border border-gray-200 shadow-sm">
       <h4 className="text-lg font-semibold mb-4 text-gray-800">📊 財務狀況評分</h4>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="text-center">
@@ -386,9 +414,9 @@ function SourceIconWithPopup({ sources }: { sources: Array<{title: string, link:
         onBlur={() => setShow(false)}
         tabIndex={0}
         aria-label={`資料來源${sources.length}`}
-        style={{ verticalAlign: 'super', marginLeft: 2 }}
+        style={{ marginLeft: 2 }}
       >
-        <sup>{sources.length}</sup>
+        <span className="flex items-center justify-center w-full h-full">{sources.length}</span>
       </button>
       {show && (
         <div
@@ -427,6 +455,41 @@ function SourceIconWithPopup({ sources }: { sources: Array<{title: string, link:
   );
 }
 
+// Log Toggle 組件（純文字、無背景、可展開收合）
+function LogToggle({ logs }: { logs?: string[] }) {
+  const [showLogs, setShowLogs] = useState(false);
+  if (!logs || logs.length === 0) return null;
+  const previewLogs = logs.slice(0, 3);
+  const hasMore = logs.length > 3;
+
+  return (
+    <div className="mt-4">
+      {/* 預覽區塊 */}
+      {!showLogs && (
+        <div
+          className="text-xs text-gray-700 cursor-pointer"
+          onClick={() => setShowLogs(true)}
+          style={{background: 'none', boxShadow: 'none', border: 'none', padding: 0, borderRadius: 0}}
+        >
+          {previewLogs.map((log, idx) => (
+            <div key={idx} className="truncate hover:whitespace-normal" style={{padding: 0, background: 'none'}}>
+              {log}
+            </div>
+          ))}
+        </div>
+      )}
+      {/* 展開全部 log */}
+      {showLogs && (
+        <div className="text-xs text-gray-700 cursor-pointer max-h-60 overflow-y-auto" style={{background: 'none', boxShadow: 'none', border: 'none', padding: 0, borderRadius: 0}} onClick={() => setShowLogs(false)}>
+          {logs.map((log, idx) => (
+            <div key={idx} className="whitespace-pre-line mb-1" style={{padding: 0, background: 'none'}}>{log}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export const InvestmentReportCard: React.FC<InvestmentReportCardProps> = ({
   stockName,
   stockId,
@@ -434,7 +497,8 @@ export const InvestmentReportCard: React.FC<InvestmentReportCardProps> = ({
   summary,
   onBookmark,
   isBookmarked,
-  paraphrased_prompt
+  paraphrased_prompt,
+  logs
 }) => {
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({});
   const [showSources, setShowSources] = useState<{[key: string]: boolean}>({});
@@ -453,196 +517,219 @@ export const InvestmentReportCard: React.FC<InvestmentReportCardProps> = ({
     }));
   };
 
+  // 新增：投資策略建議 period 對應
+  const periodMap = [
+    "1天", "1週", "1個月", "1季+"
+  ];
+
   return (
-    <div className="w-full max-w-5xl mx-auto bg-white rounded-3xl p-8 shadow-xl border border-amber-100">
-      {/* Header */}
-      <div className="flex justify-between items-start mb-8 relative">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-800 mb-3">
-            {stockName} <span className="text-gray-500 text-2xl">({stockId})</span>
-          </h2>
-          <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-xl text-gray-600 font-medium">投資分析報告</h3>
-            {paraphrased_prompt && (
-              <span className="text-sm text-gray-500 italic ml-2">—— {paraphrased_prompt}</span>
+    <>
+      <div className="w-full max-w-5xl mx-auto bg-white/90 backdrop-blur rounded-3xl p-8 shadow-xl border border-amber-100">
+        {/* Header */}
+        <div className="flex justify-between items-start mb-8 relative">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-800 mb-3">
+              {/* 修正：當 stockName 只有數字時，顯示格式化的股票代號 */}
+              {stockName && stockName !== stockId ? (
+                <>
+                  {stockName} <span className="text-gray-500 text-2xl">({stockId})</span>
+                </>
+              ) : (
+                <span className="text-gray-500 text-2xl">股票代號：{stockId}</span>
+              )}
+            </h2>
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="text-xl text-gray-600 font-medium">投資分析報告</h3>
+              {paraphrased_prompt && (
+                <span className="text-sm text-gray-500 italic ml-2">—— {paraphrased_prompt}</span>
+              )}
+            </div>
+            {summary && (
+              <p className="text-sm text-gray-500 italic">{summary}</p>
             )}
           </div>
-          {summary && (
-            <p className="text-sm text-gray-500 italic">{summary}</p>
+          
+          {/* 收藏按鈕 */}
+          {onBookmark && (
+            <button
+              className="p-3 rounded-full bg-white/80 hover:bg-amber-100 transition-all duration-200 shadow-md hover:shadow-lg"
+              onClick={onBookmark}
+            >
+              {isBookmarked ? (
+                <Star className="text-amber-500 fill-amber-400" size={28} />
+              ) : (
+                <StarOff size={28} className="text-gray-500" />
+              )}
+            </button>
           )}
         </div>
-        
-        {/* 收藏按鈕 */}
-        {onBookmark && (
-          <button
-            className="p-3 rounded-full bg-white/80 hover:bg-amber-100 transition-all duration-200 shadow-md hover:shadow-lg"
-            onClick={onBookmark}
-          >
-            {isBookmarked ? (
-              <Star className="text-amber-500 fill-amber-400" size={28} />
-            ) : (
-              <StarOff size={28} className="text-gray-500" />
-            )}
-          </button>
-        )}
-      </div>
 
-      {/* Sections */}
-      <div className="space-y-6">
-        {sections.map((section, index) => {
-          const sectionTitle = section.section || section.title || "未命名區塊";
-          const icon = section.icon || sectionIcons[sectionTitle] || "📋";
-          const colorClass = sectionColors[sectionTitle] || sectionColors[icon] || "from-gray-50 to-gray-100";
-          const isExpanded = expandedSections[sectionTitle] !== false; // 預設展開
-          const isSourcesExpanded = showSources[sectionTitle] || false;
-          
-          return (
-            <motion.div
-              key={index}
-              className={`bg-gradient-to-br ${colorClass} rounded-2xl p-6 shadow-lg border border-white/60 backdrop-blur-sm`}
-              layout
-            >
-              {/* Section Header */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <span className="text-3xl">{icon}</span>
-                  <h3 className="text-xl font-bold flex items-center gap-3 text-gray-800">
-                    <span>{sectionTitle}</span>
-                  </h3>
+        {/* Sections */}
+        <div className="space-y-6">
+          {sections.map((section, index) => {
+            const sectionTitle = section.section || section.title || "未命名區塊";
+            const icon = section.icon || sectionIcons[sectionTitle] || "📋";
+            const colorClass = sectionColors[sectionTitle] || sectionColors[icon] || "from-gray-50 to-gray-100";
+            const isExpanded = expandedSections[sectionTitle] !== false; // 預設展開
+            const isSourcesExpanded = showSources[sectionTitle] || false;
+            
+            return (
+              <motion.div
+                key={index}
+                className={`bg-gradient-to-br ${colorClass} rounded-2xl p-6 shadow-lg border border-white/60 backdrop-blur-sm`}
+                layout
+              >
+                {/* Section Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                    <span className="text-3xl">{icon}</span>
+                    <h3 className="text-xl font-bold flex items-center gap-3 text-gray-800">
+                      <span>{sectionTitle}</span>
+                    </h3>
+                  </div>
                 </div>
-              </div>
 
-              {/* Section Content */}
-              <AnimatePresence>
-                {isExpanded && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="text-sm text-gray-700 leading-relaxed"
-                  >
-                    {/* 財務分數顯示 - 只在財務狀況分析區塊顯示 */}
-                    {section.financial_scores && sectionTitle === "財務狀況分析" && (
-                      <FinancialScoresComponent scores={section.financial_scores} />
-                    )}
+                {/* Section Content */}
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="text-sm text-gray-700 leading-relaxed"
+                    >
+                      {/* 財務分數顯示 - 只在財務狀況分析區塊顯示 */}
+                      {section.financial_scores && sectionTitle === "財務狀況分析" && (
+                        <FinancialScoresComponent scores={section.financial_scores} />
+                      )}
 
-                    {/* Cards 型 section */}
-                    {section.cards && section.cards.length > 0 && (
-                      <div className="space-y-5">
-                        {section.cards.map((card, cardIndex) => (
-                          <div key={cardIndex} className="bg-white/70 rounded-xl p-5 shadow-md border border-white/50">
-                            <div className="flex items-center mb-2">
-                              <span className="font-semibold text-lg">{card.title}</span>
+                      {/* Cards 型 section */}
+                      {section.cards && section.cards.length > 0 && (
+                        <div className="space-y-5">
+                          {section.cards.map((card, cardIndex) => (
+                            <div key={cardIndex} className="bg-white/70 rounded-xl p-5 shadow-md border border-white/50">
+                              <div className="flex items-center mb-2">
+                                {/* Section 3: 投資策略建議標題加 period */}
+                                <span className="font-semibold text-lg">
+                                  {section.section === '不同投資型態的投資策略建議' && periodMap[cardIndex] ? `${card.title}（${periodMap[cardIndex]}）` : card.title}
+                                </span>
+                              </div>
+                              {card.content && <div className="mb-3 text-gray-700">{renderContent(card.content, section.sources)}</div>}
+                              {/* 新增：每個觀點下方加結論 */}
+                              {typeof card.conclusion === 'string' && card.conclusion && (
+                                <div className="mb-2 text-blue-700 font-medium">結論：{card.conclusion}</div>
+                              )}
+                              {card.suggestion && <div className="mb-3 text-blue-700 font-medium">{card.suggestion}</div>}
+                              {card.bullets && card.bullets.length > 0 && (
+                                <ul className="list-disc list-inside space-y-2">
+                                  {card.bullets.map((bullet, bulletIndex) => (
+                                    <li key={bulletIndex} className="text-sm text-gray-600">{renderContent(bullet, section.sources)}</li>
+                                  ))}
+                                </ul>
+                              )}
                             </div>
-                            {card.content && <div className="mb-3 text-gray-700">{renderContent(card.content, section.sources)}</div>}
-                            {card.suggestion && <div className="mb-3 text-blue-700 font-medium">{card.suggestion}</div>}
-                            {card.bullets && card.bullets.length > 0 && (
-                              <ul className="list-disc list-inside space-y-2">
-                                {card.bullets.map((bullet, bulletIndex) => (
-                                  <li key={bulletIndex} className="text-sm text-gray-600">{renderContent(bullet, section.sources)}</li>
-                                ))}
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Tabs 型 section */}
+                      {section.tabs && section.tabs.length > 0 && (
+                        <TabsComponent key={`tabs-${index}`} tabs={section.tabs} />
+                      )}
+
+                      {/* Bullets 型 section */}
+                      {section.bullets && section.bullets.length > 0 && (
+                        <ul className="list-disc list-inside space-y-3">
+                          {section.bullets.map((bullet, bulletIndex) => (
+                            <li key={bulletIndex} className="text-gray-700">{bullet}</li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {/* Sources 型 section - 可切換顯示 */}
+                      {section.sources && section.sources.length > 0 && (
+                        <AnimatePresence>
+                          {isSourcesExpanded && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="mt-4"
+                            >
+                              <h4 className="font-semibold mb-3 text-gray-800">資料來源：</h4>
+                              <ul className="list-disc list-inside space-y-2 text-sm">
+                                {section.sources.map((source, sourceIndex) => {
+                                  // 處理不同的來源格式
+                                  let displayText = "";
+                                  let link = "";
+                                  
+                                  if (typeof source === 'string') {
+                                    displayText = source;
+                                  } else if (source && typeof source === 'object' && 'title' in source) {
+                                    displayText = source.title;
+                                    link = source.link || "";
+                                  } else {
+                                    displayText = String(source);
+                                  }
+                                  
+                                  return (
+                                    <li key={sourceIndex} className="text-gray-600">
+                                      {link ? (
+                                        <a href={link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">
+                                          {displayText}
+                                        </a>
+                                      ) : (
+                                        displayText
+                                      )}
+                                    </li>
+                                  );
+                                })}
                               </ul>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      )}
 
-                    {/* Tabs 型 section */}
-                    {section.tabs && section.tabs.length > 0 && (
-                      <TabsComponent key={`tabs-${index}`} tabs={section.tabs} />
-                    )}
+                      {/* Disclaimer 型 section */}
+                      {section.disclaimer && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                          <p className="text-sm text-amber-800">{section.disclaimer}</p>
+                        </div>
+                      )}
 
-                    {/* Bullets 型 section */}
-                    {section.bullets && section.bullets.length > 0 && (
-                      <ul className="list-disc list-inside space-y-3">
-                        {section.bullets.map((bullet, bulletIndex) => (
-                          <li key={bulletIndex} className="text-gray-700">{bullet}</li>
-                        ))}
-                      </ul>
-                    )}
+                      {/* Summary Table */}
+                      {section.summary_table && section.summary_table.length > 0 && (
+                        <SummaryTableComponent data={section.summary_table} sources={section.sources} />
+                      )}
 
-                    {/* Sources 型 section - 可切換顯示 */}
-                    {section.sources && section.sources.length > 0 && (
-                      <AnimatePresence>
-                        {isSourcesExpanded && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="mt-4"
-                          >
-                            <h4 className="font-semibold mb-3 text-gray-800">資料來源：</h4>
-                            <ul className="list-disc list-inside space-y-2 text-sm">
-                              {section.sources.map((source, sourceIndex) => {
-                                // 處理不同的來源格式
-                                let displayText = "";
-                                let link = "";
-                                
-                                if (typeof source === 'string') {
-                                  displayText = source;
-                                } else if (source && typeof source === 'object' && 'title' in source) {
-                                  displayText = source.title;
-                                  link = source.link || "";
-                                } else {
-                                  displayText = String(source);
-                                }
-                                
-                                return (
-                                  <li key={sourceIndex} className="text-gray-600">
-                                    {link ? (
-                                      <a href={link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">
-                                        {displayText}
-                                      </a>
-                                    ) : (
-                                      displayText
-                                    )}
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    )}
+                      {/* 向後相容：舊格式 */}
+                      {section.content && typeof section.content === 'string' && !section.cards && !section.tabs && !section.bullets && !section.sources && !section.disclaimer && (
+                        <div className="mb-4">{renderContent(section.content, section.sources)}</div>
+                      )}
 
-                    {/* Disclaimer 型 section */}
-                    {section.disclaimer && (
-                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                        <p className="text-sm text-amber-800">{section.disclaimer}</p>
-                      </div>
-                    )}
-
-                    {/* Summary Table */}
-                    {section.summary_table && section.summary_table.length > 0 && (
-                      <SummaryTableComponent data={section.summary_table} sources={section.sources} />
-                    )}
-
-                    {/* 向後相容：舊格式 */}
-                    {section.content && typeof section.content === 'string' && !section.cards && !section.tabs && !section.bullets && !section.sources && !section.disclaimer && (
-                      <div className="mb-4">{renderContent(section.content, section.sources)}</div>
-                    )}
-
-                    {/* 向後相容：舊表格格式 */}
-                    {section.table && section.table.length > 0 && !section.tabs && (
-                      <FinancialTable table={section.table} />
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {/* Footer */}
-      <div className="mt-8 pt-6 border-t border-amber-200">
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <span>📌 本報告為 AI 模型根據公開資料與新聞彙整生成，並非任何投資建議</span>
-          <span>投資必有風險，請審慎評估並自行承擔操作結果</span>
+                      {/* 向後相容：舊表格格式 */}
+                      {section.table && section.table.length > 0 && !section.tabs && (
+                        <FinancialTable table={section.table} />
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            );
+          })}
         </div>
+
+        {/* Footer */}
+        <div className="mt-8 pt-6 border-t border-amber-200">
+          <div className="flex items-center justify-between text-xs text-gray-500">
+            <span>📌 本報告為 AI 模型根據公開資料與新聞彙整生成，並非任何投資建議</span>
+            <span>投資必有風險，請審慎評估並自行承擔操作結果</span>
+          </div>
+        </div>
+        {/* LogToggle logs={logs} 加回來，純文字無背景 */}
+        <LogToggle logs={logs} />
       </div>
-    </div>
+    </>
   );
 };
 

@@ -1,5 +1,5 @@
-
 import '../styles/globals.css'
+import HeaderWithLogin from './components/HeaderWithLogin';
 
 export const metadata = {
   title: 'AI Chat',
@@ -9,7 +9,10 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh-Hant">
-      <body>{children}</body>
+      <body>
+        <HeaderWithLogin />
+        {children}
+      </body>
     </html>
   )
 }
