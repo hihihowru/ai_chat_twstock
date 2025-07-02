@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 使用環境變數，預設為 localhost:8000
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
     
     // 調用後端 API
     const backendResponse = await fetch(`${API_BASE_URL}/api/watchlist-summary`, {

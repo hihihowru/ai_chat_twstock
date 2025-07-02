@@ -4,7 +4,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.text();
     // 讀取 API_BASE_URL，production 必須是 https:// 開頭
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
     // 轉發到後端 API
     const backendResponse = await fetch(`${API_BASE_URL}/api/proxy_login`, {
       method: 'POST',
