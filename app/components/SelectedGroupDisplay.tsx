@@ -38,7 +38,7 @@ const SelectedGroupDisplay: React.FC = () => {
       console.log('[SelectedGroupDisplay] 股票數量:', selectedGroup.ItemList.length);
       
       // 讀取 stock_alias_dict.json
-      const res = await fetch('/data/stock_alias_dict.json');
+      const res = await fetch('/stock_alias_dict.json');
       const aliasMap = await res.json();
       
       // 將股票代號轉換為中文名稱

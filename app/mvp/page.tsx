@@ -70,7 +70,7 @@ export default function MVPChatPage() {
         const match = question.match(/\[(.*)\]/);
         if (match) {
           const stockList = match[1].split(',').map(s => s.trim());
-          fetch('/data/stock_alias_dict.json')
+          fetch('/stock_alias_dict.json')
             .then(res => res.json())
             .then(aliasMap => {
               const names = stockList.map(id => {
