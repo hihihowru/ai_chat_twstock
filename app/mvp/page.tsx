@@ -219,7 +219,7 @@ export default function MVPChatPage() {
 
   const handleGeneralQuestion = async (question: string) => {
     // 串接 SSE API
-    const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:8000';
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     const url = `${apiBaseUrl}/api/ask-sse?question=${encodeURIComponent(question)}`;
     const es = new EventSource(url);
     eventSourceRef.current = es;

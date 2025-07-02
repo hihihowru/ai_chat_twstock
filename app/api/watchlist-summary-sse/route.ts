@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   }
 
   // 使用 API_BASE_URL，production 必須是 https:// 開頭
-  const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
   
   // 直接 proxy 到新的 SSE endpoint
   const backendResponse = await fetch(`${API_BASE_URL}/api/watchlist-summary-sse`, {

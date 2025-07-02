@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('authorization');
     
     // 使用 API_BASE_URL，production 必須是 https:// 開頭
-    const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
     
     // 轉發到後端 API
     const backendResponse = await fetch(`${API_BASE_URL}/api/proxy_custom_group`, {
