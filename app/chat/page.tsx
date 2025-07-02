@@ -47,9 +47,12 @@ export default function ChatPage() {
     if (isWatchlistSummaryQuestion(q)) {
       // Parse stock list from question
       const match = q.match(/\[(.*)\]/);
-      let stock_list: string[] = [];
+      let stock_list: number[] = [];
       if (match && match[1]) {
-        stock_list = match[1].split(',').map(s => s.trim().split(' ')[0]);
+        stock_list = match[1].split(',').map(s => {
+          const stockMatch = s.trim().match(/^(\d+)/);
+          return stockMatch ? parseInt(stockMatch[1]) : null;
+        }).filter(id => id !== null) as number[];
       }
       // SSE streaming
       const eventSource = new EventSource('/api/watchlist-summary-sse?stock_list=' + encodeURIComponent(JSON.stringify(stock_list)));

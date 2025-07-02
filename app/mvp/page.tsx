@@ -184,57 +184,33 @@ export default function MVPChatPage() {
         return;
       }
 
-      // 先顯示開始分析的 log
-      setMessages((prev) => [...prev, { role: 'log', content: '🔍 開始分析自選股摘要...' }]);
+      // 用 EventSource 監聽 SSE log
+      const es = new EventSource('/api/watchlist-summary-sse?stock_list=' + encodeURIComponent(JSON.stringify(stockList)));
+      eventSourceRef.current = es;
 
-      // 調用自選股摘要 API
-      const response = await fetch('/api/watchlist-summary', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          stock_list: stockList,
-          userId: 'default'
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      if (data.success) {
-        // 添加 logs
-        if (data.logs && data.logs.length > 0) {
-          data.logs.forEach((log: string) => {
-            setMessages((prev) => [...prev, { role: 'log', content: log }]);
-          });
-        }
-        
-        // 添加完成 log
-        setMessages((prev) => [...prev, { role: 'log', content: '✅ 自選股摘要分析完成' }]);
-        
-        // 添加最終結果
-        setMessages((prev) => [...prev, { 
-          role: 'system', 
-          content: 'watchlist_summary', 
-          sections: data.sections 
-        }]);
-      } else {
-        setMessages((prev) => [...prev, { 
-          role: 'system', 
-          content: `自選股摘要失敗: ${data.error || '未知錯誤'}` 
-        }]);
-      }
+      es.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.log) {
+            setMessages((prev) => [...prev, { role: 'log', content: data.log }]);
+          }
+          if (data.sections) {
+            setMessages((prev) => [...prev, { role: 'system', content: 'watchlist_summary', sections: data.sections }]);
+            setLoading(false);
+            setIsProcessing(false);
+            es.close();
+          }
+        } catch (e) {}
+      };
+      es.onerror = () => {
+        setLoading(false);
+        setIsProcessing(false);
+        setMessages((prev) => [...prev, { role: 'system', content: '取得回覆時發生錯誤' }]);
+        es.close();
+      };
     } catch (error) {
       console.error('Watchlist summary error:', error);
-      setMessages((prev) => [...prev, { 
-        role: 'system', 
-        content: `處理自選股摘要時發生錯誤: ${error}` 
-      }]);
-    } finally {
+      setMessages((prev) => [...prev, { role: 'system', content: `處理自選股摘要時發生錯誤: ${error}` }]);
       setLoading(false);
       setIsProcessing(false);
     }

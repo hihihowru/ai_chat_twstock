@@ -5,8 +5,11 @@ export async function POST(request: NextRequest) {
     const body = await request.text();
     const authHeader = request.headers.get('authorization');
     
+    // 使用環境變數，預設為 localhost:8000
+    const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
+    
     // 轉發到後端 API
-    const backendResponse = await fetch('http://localhost:8000/api/proxy_custom_group', {
+    const backendResponse = await fetch(`${API_BASE_URL}/api/proxy_custom_group`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
