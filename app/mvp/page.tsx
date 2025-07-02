@@ -34,7 +34,7 @@ export default function MVPChatPage() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<{ role: 'user' | 'system' | 'log'; content: string; report?: any; sections?: any[] }[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showLogs, setShowLogs] = useState(false);
+  const [showLogs, setShowLogs] = useState(true);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const [displayPrompt, setDisplayPrompt] = useState<string | null>(null);
@@ -192,6 +192,7 @@ export default function MVPChatPage() {
         try {
           const data = JSON.parse(event.data);
           if (data.log) {
+            console.log('SSE:', data.log);
             setMessages((prev) => [...prev, { role: 'log', content: data.log }]);
           }
           if (data.sections) {

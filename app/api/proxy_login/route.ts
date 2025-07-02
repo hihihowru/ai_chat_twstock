@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text();
-    // 讀取 API_BASE_URL，預設為 http://localhost:8000
+    // 讀取 API_BASE_URL，production 必須是 https:// 開頭
     const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
     // 轉發到後端 API
     const backendResponse = await fetch(`${API_BASE_URL}/api/proxy_login`, {

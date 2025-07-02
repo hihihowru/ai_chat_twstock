@@ -16,6 +16,7 @@ interface Card {
   type: string;
   sources?: Source[];
   data?: any;
+  insights?: { title: string; content: string; why_important: string }[];
 }
 
 interface Section {
@@ -177,6 +178,52 @@ const WatchlistSummaryCard: React.FC<WatchlistSummaryCardProps> = ({
       }
     }
 
+    if (card.type === 'discussion_stats' && card.data) {
+      const { discussion_count, comment_count, emotions, market_label } = card.data;
+      return (
+        <div className="w-full bg-white rounded-lg shadow p-4 mb-4">
+          <div className="flex flex-row items-center justify-between mb-4 gap-4">
+            <div className="flex flex-col items-center flex-1">
+              <span className="text-gray-500 text-sm">討論數</span>
+              <span className="text-4xl font-extrabold text-blue-600">{discussion_count}</span>
+              <span className="text-xs text-gray-400">篇</span>
+            </div>
+            <div className="flex flex-col items-center flex-1">
+              <span className="text-gray-500 text-sm">留言數</span>
+              <span className="text-4xl font-extrabold text-green-600">{comment_count}</span>
+              <span className="text-xs text-gray-400">則</span>
+            </div>
+            <div className="flex flex-col items-center flex-1">
+              <span className="text-gray-500 text-sm">市場標籤</span>
+              <span className="text-lg font-bold text-red-600 bg-red-50 px-3 py-1 rounded-full">{market_label}</span>
+            </div>
+          </div>
+          <div className="flex flex-row items-center justify-between mt-2 gap-4">
+            {emotions.map((emo, idx) => (
+              <div key={emo.type} className="flex flex-col items-center flex-1">
+                <span className="text-gray-500 text-xs">{emo.type}</span>
+                <span className={`text-2xl font-bold ${emo.type === '正面' ? 'text-green-500' : emo.type === '負面' ? 'text-red-500' : 'text-gray-500'}`}>{emo.post}</span>
+                <span className="text-xs text-gray-400">貼文</span>
+                <span className="text-xs text-gray-400">{emo.comment} 留言</span>
+              </div>
+            ))}
+          </div>
+          {/* 補充觀察與解讀 */}
+          {card.insights && Array.isArray(card.insights) && (
+            <div className="mt-6 space-y-6 border-t pt-4">
+              {card.insights.map((insight, idx) => (
+                <div key={idx} className="">
+                  <div className="font-bold text-base text-gray-800 mb-1">{insight.title}</div>
+                  <div className="text-gray-700 text-sm mb-1 whitespace-pre-line">{insight.content}</div>
+                  <div className="text-xs text-gray-500 italic">👉 {insight.why_important}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     // 新增：若 card.content 為 HTML 字串，使用 dangerouslySetInnerHTML
     if (card.content && typeof card.content === 'string' && /<[^>]+>/.test(card.content)) {
       return <div className="whitespace-pre-line text-sm text-gray-700" dangerouslySetInnerHTML={{ __html: card.content }} />;
@@ -241,15 +288,9 @@ const WatchlistSummaryCard: React.FC<WatchlistSummaryCardProps> = ({
                   <td className="px-3 py-2">{row['產業指數']}</td>
                   {periods.map((p) => (
                     <React.Fragment key={p.key}>
-                      <td className={`px-3 py-2 text-center ${getColor(row[`個股${p.key}`])}`}>
-                        {row[`個股${p.key}`] === null ? '無對應' : `${row[`個股${p.key}`]}%`}
-                      </td>
-                      <td className={`px-3 py-2 text-center ${getColor(row[`產業${p.key}`])}`}>
-                        {row[`產業${p.key}`] === null ? '無對應' : `${row[`產業${p.key}`]}%`}
-                      </td>
-                      <td className={`px-3 py-2 text-center ${getStatusColor(row[`領先狀態${p.key}`])}`}>
-                        {row[`領先狀態${p.key}`]}
-                      </td>
+                      <td className={`px-3 py-2 ${getColor(row[p.key])}`}>{formatReturnRate(row[p.key])}</td>
+                      <td className={`px-3 py-2 ${getColor(row[`${p.key}產業`])}`}>{formatReturnRate(row[`${p.key}產業`])}</td>
+                      <td className={`px-3 py-2 ${getStatusColor(row[`${p.key}狀態`])}`}>{row[`${p.key}狀態`]}</td>
                     </React.Fragment>
                   ))}
                 </tr>
@@ -261,121 +302,46 @@ const WatchlistSummaryCard: React.FC<WatchlistSummaryCardProps> = ({
     );
   }
 
-  if (isLoading) {
-    return (
-      <div className="w-full max-w-4xl mx-auto bg-white/90 backdrop-blur rounded-3xl p-8 shadow-xl border border-gray-200">
-        <div className="flex items-center gap-2 mb-6">
-          <div className="animate-pulse bg-gray-200 h-6 w-48 rounded"></div>
-        </div>
-        <div className="space-y-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="animate-pulse">
-              <div className="bg-gray-200 h-4 w-full rounded mb-2"></div>
-              <div className="bg-gray-200 h-4 w-3/4 rounded"></div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // 調試：檢查 sections 資料
-  console.log('[WatchlistSummaryCard] sections:', sections);
-  
   return (
-    <div className="space-y-6">
-      {sections.map((section: any, idx: number) => {
-        // 新增：渲染 industry_comparison section
-        if (section.type === 'industry_comparison') {
-          return <div key={idx}>{renderIndustryComparisonSection(section)}</div>;
-        }
-        return (
-          <div key={idx} className="w-full max-w-4xl mx-auto bg-white/90 backdrop-blur rounded-3xl p-8 shadow-xl border border-gray-200">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">{section.title}</h2>
-              <button
-                onClick={() => toggleSection(section.title)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                {expandedSections.has(section.title) ? (
-                  <ChevronUp className="h-5 w-5 text-gray-600" />
-                ) : (
-                  <ChevronDown className="h-5 w-5 text-gray-600" />
-                )}
-              </button>
-            </div>
-            
-            {expandedSections.has(section.title) && (
-              <div className="space-y-4">
-                {/* 只渲染 cards，不重複渲染 section.content */}
-                {section.cards && section.cards.length > 0 ? (
-                  section.cards.map((card, cardIndex) => {
-                    // 移除報酬率統計分析的說明文字卡片（type === 'text'）
-                    if (section.title === '報酬率統計分析' && card.type === 'text') {
-                      return null;
-                    }
-                    return (
-                      <div key={cardIndex} className="border rounded-lg p-4 bg-gray-50">
-                        <h4 className="font-medium text-gray-900 mb-2">{card.title}</h4>
-                        {renderCardContent(card)}
-                        {/* 資料來源 */}
-                        {card.sources && card.sources.length > 0 && (
-                          <div className="mt-3 pt-3 border-t">
-                            <h5 className="text-xs font-medium text-gray-500 mb-2">資料來源：</h5>
-                            <div className="flex flex-wrap gap-2">
-                              {card.sources.map((source, sourceIndex) => (
-                                <a
-                                  key={sourceIndex}
-                                  href={source.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
-                                >
-                                  {source.name}
-                                  <ExternalLink className="h-3 w-3" />
-                                </a>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                ) : (
-                  // 若無 cards，渲染 markdown 格式內容
-                  section.content && (
-                    <div className="prose prose-sm max-w-none text-gray-700">
-                      <ReactMarkdown>{section.content}</ReactMarkdown>
-                    </div>
-                  )
-                )}
-                {/* Section 資料來源 */}
-                {section.sources && section.sources.length > 0 && (
-                  <div className="pt-4 border-t">
-                    <h5 className="text-xs font-medium text-gray-500 mb-2">資料來源：</h5>
-                    <div className="flex flex-wrap gap-2">
-                      {section.sources.map((source, sourceIndex) => (
-                        <a
-                          key={sourceIndex}
-                          href={source.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
-                        >
-                          {source.name}
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
+    <div className="space-y-4">
+      {sections.map((section, index) => (
+        <div key={index} className="bg-white p-4 rounded-lg shadow">
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="text-lg font-bold">{section.title}</h2>
+            <button onClick={() => toggleSection(section.title)}>
+              {expandedSections.has(section.title) ? <ChevronUp /> : <ChevronDown />}
+            </button>
+          </div>
+          {expandedSections.has(section.title) && (
+            <div>
+              <div className="text-sm text-gray-700 mb-4">
+                <ReactMarkdown>{section.content}</ReactMarkdown>
+              </div>
+              {section.cards.map((card, cardIndex) => (
+                <div key={cardIndex} className="mb-4">
+                  <h3 className="text-md font-bold mb-2">{card.title}</h3>
+                  {renderCardContent(card)}
+                  {card.sources && (
+                    <div className="text-xs text-gray-500 mt-2">
+                      資料來源：
+                      {card.sources.map((source, sourceIndex) => (
+                        <span key={sourceIndex}>
+                          <a href={source.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-500">
+                            {source.name}
+                          </a>
+                          {sourceIndex < card.sources.length - 1 && ', '}
+                        </span>
                       ))}
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      })}
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 };
 
-export default WatchlistSummaryCard; 
+export default WatchlistSummaryCard;

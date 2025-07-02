@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
     const body = await request.text();
     const authHeader = request.headers.get('authorization');
     
-    // 使用環境變數，預設為 localhost:8000
+    // 使用 API_BASE_URL，production 必須是 https:// 開頭
     const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
     
     // 轉發到後端 API

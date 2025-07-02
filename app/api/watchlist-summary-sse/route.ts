@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     return new Response('Missing stock_list parameter', { status: 400 });
   }
 
-  // 使用環境變數，預設為 localhost:8000
+  // 使用 API_BASE_URL，production 必須是 https:// 開頭
   const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
   
   // 直接 proxy 到新的 SSE endpoint
