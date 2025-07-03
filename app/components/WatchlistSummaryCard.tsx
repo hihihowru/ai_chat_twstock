@@ -24,6 +24,7 @@ interface Section {
   content: string;
   cards: Card[];
   sources: Source[];
+  data?: any;
 }
 
 interface WatchlistSummaryCardProps {
@@ -199,7 +200,7 @@ const WatchlistSummaryCard: React.FC<WatchlistSummaryCardProps> = ({
             </div>
           </div>
           <div className="flex flex-row items-center justify-between mt-2 gap-4">
-            {emotions.map((emo, idx) => (
+            {emotions && Array.isArray(emotions) && emotions.map((emo, idx) => (
               <div key={emo.type} className="flex flex-col items-center flex-1">
                 <span className="text-gray-500 text-xs">{emo.type}</span>
                 <span className={`text-2xl font-bold ${emo.type === '正面' ? 'text-green-500' : emo.type === '負面' ? 'text-red-500' : 'text-gray-500'}`}>{emo.post}</span>
@@ -209,7 +210,7 @@ const WatchlistSummaryCard: React.FC<WatchlistSummaryCardProps> = ({
             ))}
           </div>
           {/* 補充觀察與解讀 */}
-          {card.insights && Array.isArray(card.insights) && (
+          {card.insights && Array.isArray(card.insights) && card.insights.length > 0 && (
             <div className="mt-6 space-y-6 border-t pt-4">
               {card.insights.map((insight, idx) => (
                 <div key={idx} className="">
@@ -280,7 +281,7 @@ const WatchlistSummaryCard: React.FC<WatchlistSummaryCardProps> = ({
               </tr>
             </thead>
             <tbody>
-              {section.data.map((row: any, idx: number) => (
+              {section.data && Array.isArray(section.data) && section.data.map((row: any, idx: number) => (
                 <tr key={idx} className="border-b hover:bg-gray-50">
                   <td className="px-3 py-2">{row['股票代號']}</td>
                   <td className="px-3 py-2">{row['公司名稱']}</td>
@@ -304,7 +305,7 @@ const WatchlistSummaryCard: React.FC<WatchlistSummaryCardProps> = ({
 
   return (
     <div className="space-y-4">
-      {sections.map((section, index) => (
+      {sections && Array.isArray(sections) && sections.map((section, index) => (
         <div key={index} className="bg-white p-4 rounded-lg shadow">
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-lg font-bold">{section.title}</h2>
@@ -317,11 +318,11 @@ const WatchlistSummaryCard: React.FC<WatchlistSummaryCardProps> = ({
               <div className="text-sm text-gray-700 mb-4">
                 <ReactMarkdown>{section.content}</ReactMarkdown>
               </div>
-              {section.cards.map((card, cardIndex) => (
+              {Array.isArray(section.cards) && section.cards.map((card, cardIndex) => (
                 <div key={cardIndex} className="mb-4">
                   <h3 className="text-md font-bold mb-2">{card.title}</h3>
                   {renderCardContent(card)}
-                  {card.sources && (
+                  {card.sources && Array.isArray(card.sources) && card.sources.length > 0 && (
                     <div className="text-xs text-gray-500 mt-2">
                       資料來源：
                       {card.sources.map((source, sourceIndex) => (

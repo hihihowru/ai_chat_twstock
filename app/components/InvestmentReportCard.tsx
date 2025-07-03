@@ -95,7 +95,7 @@ const renderContent = (content: any, defaultSources?: Array<{title: string, link
             return (
               <div key={index} className="whitespace-pre-line flex items-center flex-wrap">
                 <span className="inline-block"><ReactMarkdown>{item.text}</ReactMarkdown></span>
-                {item.sources && item.sources.length > 0 && (
+                {item.sources && Array.isArray(item.sources) && item.sources.length > 0 && (
                   <SourceIconWithPopup sources={item.sources} />
                 )}
               </div>
@@ -117,7 +117,7 @@ const renderContent = (content: any, defaultSources?: Array<{title: string, link
   const match = content.match(multiSourcePattern);
   let mainText = content;
   let showSources = false;
-  if (match && defaultSources && defaultSources.length > 0) {
+  if (match && defaultSources && Array.isArray(defaultSources) && defaultSources.length > 0) {
     mainText = content.replace(multiSourcePattern, '');
     showSources = true;
   }
@@ -341,10 +341,10 @@ function SummaryTableComponent({ data, sources }: { data: Array<{ period: string
 
 // 來源計數器元件
 function SourcesCounter({ sources, onToggle }: { sources: Array<string | {title: string, link: string}>, onToggle: () => void }) {
-  const validSources = sources.filter(source => {
+  const validSources = sources && Array.isArray(sources) ? sources.filter(source => {
     if (typeof source === 'string') return source;
     return source.link && source.link !== '無連結';
-  });
+  }) : [];
 
   return (
     <button
@@ -404,6 +404,12 @@ function SourceIconWithPopup({ sources }: { sources: Array<{title: string, link:
     if (hoverAreaRef.current && hoverAreaRef.current.contains(e.relatedTarget as Node)) return;
     setShow(false);
   };
+  
+  // 安全檢查
+  if (!sources || !Array.isArray(sources) || sources.length === 0) {
+    return null;
+  }
+  
   return (
     <span className="relative inline-block align-middle ml-1" ref={hoverAreaRef}>
       <button
@@ -587,6 +593,10 @@ export const InvestmentReportCard: React.FC<InvestmentReportCardProps> = ({
                       <span>{sectionTitle}</span>
                     </h3>
                   </div>
+                  {/* 新增：section 來源 icon+數字 */}
+                  {section.sources && Array.isArray(section.sources) && section.sources.length > 0 && (
+                    <SourcesCounter sources={section.sources} onToggle={() => toggleSources(sectionTitle)} />
+                  )}
                 </div>
 
                 {/* Section Content */}
@@ -647,7 +657,7 @@ export const InvestmentReportCard: React.FC<InvestmentReportCardProps> = ({
                       )}
 
                       {/* Sources 型 section - 可切換顯示 */}
-                      {section.sources && section.sources.length > 0 && (
+                      {section.sources && Array.isArray(section.sources) && section.sources.length > 0 && (
                         <AnimatePresence>
                           {isSourcesExpanded && (
                             <motion.div
