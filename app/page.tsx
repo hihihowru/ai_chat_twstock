@@ -1,21 +1,34 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { MessageCircle, TrendingUp, Users } from 'lucide-react'
 
 export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isClient, setIsClient] = useState(false)
 
-  // 檢查登入狀態（簡單版本）
-  const checkLoginStatus = () => {
+  // 檢查是否在客戶端環境
+  useEffect(() => {
+    setIsClient(true)
+    // 檢查登入狀態（簡單版本）
     const token = localStorage.getItem('cmoney_token')
-    return !!token
-  }
+    setIsLoggedIn(!!token)
+  }, [])
 
   // 主要 CTA 按鈕
   const MainCTA = () => {
-    const isLoggedIn = checkLoginStatus()
+    // 在服務器端渲染時顯示登入按鈕
+    if (!isClient) {
+      return (
+        <button 
+          className="inline-flex items-center px-8 py-4 bg-blue-600 text-white font-semibold rounded-xl shadow-lg"
+        >
+          <Users className="mr-2" size={20} />
+          立即登入
+        </button>
+      )
+    }
     
     if (isLoggedIn) {
       return (
