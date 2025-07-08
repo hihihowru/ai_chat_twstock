@@ -78,8 +78,7 @@ export default function ColorPreview({ onColorSelect }: ColorPreviewProps) {
               <button
                 className="w-full py-2 px-4 rounded-lg text-white font-medium transition-colors"
                 style={{ 
-                  backgroundColor: color.primary,
-                  ':hover': { backgroundColor: color.hover }
+                  backgroundColor: color.primary
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = color.hover;
