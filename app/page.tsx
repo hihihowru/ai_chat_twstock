@@ -54,7 +54,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#FAF7F3]">
       {/* Hero Section */}
       <div className="flex-1 flex items-center justify-center px-6">
         <div className="max-w-4xl mx-auto text-center">
@@ -75,7 +75,7 @@ export default function HomePage() {
 
           {/* 功能特色 */}
           <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <div className="bg-white/60 backdrop-blur rounded-xl p-6 shadow-lg">
+            <div className="bg-[#F5F3EF]/80 backdrop-blur rounded-xl p-6 shadow-lg">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
                 <MessageCircle className="text-blue-600" size={24} />
               </div>
@@ -85,7 +85,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="bg-white/60 backdrop-blur rounded-xl p-6 shadow-lg">
+            <div className="bg-[#F5F3EF]/80 backdrop-blur rounded-xl p-6 shadow-lg">
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
                 <TrendingUp className="text-green-600" size={24} />
               </div>
@@ -95,7 +95,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="bg-white/60 backdrop-blur rounded-xl p-6 shadow-lg">
+            <div className="bg-[#F5F3EF]/80 backdrop-blur rounded-xl p-6 shadow-lg">
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
                 <Users className="text-purple-600" size={24} />
               </div>

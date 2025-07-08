@@ -12,9 +12,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="zh-Hant">
       <body>
         <HeaderWithLogin />
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100">
+        <div className="min-h-screen bg-[#FAF7F3]">
           {/* Breadcrumb 區域 */}
-          <div className="px-6 py-3 bg-white/60 backdrop-blur border-b border-gray-200">
+          <div className="px-6 py-3 bg-[#F5F3EF]/60 backdrop-blur border-b border-gray-200">
             <Breadcrumb />
           </div>
           {/* 主要內容區域 */}
