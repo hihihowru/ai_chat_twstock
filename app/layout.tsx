@@ -1,5 +1,6 @@
 import '../styles/globals.css'
 import HeaderWithLogin from './components/HeaderWithLogin';
+import Breadcrumb from './components/Breadcrumb';
 
 export const metadata = {
   title: 'AI Chat',
@@ -11,7 +12,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="zh-Hant">
       <body>
         <HeaderWithLogin />
-        {children}
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100">
+          {/* Breadcrumb 區域 */}
+          <div className="px-6 py-3 bg-white/60 backdrop-blur border-b border-gray-200">
+            <Breadcrumb />
+          </div>
+          {/* 主要內容區域 */}
+          <main>
+            {children}
+          </main>
+        </div>
       </body>
     </html>
   )
