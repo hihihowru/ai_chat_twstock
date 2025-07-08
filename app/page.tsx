@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { MessageCircle, TrendingUp, Users } from 'lucide-react'
+import ColorPreview from './components/ColorPreview'
 
 export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -40,7 +41,7 @@ export default function HomePage() {
           開始 AI 對話
         </Link>
       )
-    } else {
+      } else {
       return (
         <button 
           onClick={() => alert('登入功能開發中...')}
@@ -71,14 +72,14 @@ export default function HomePage() {
           {/* 主要 CTA */}
           <div className="mb-12">
             <MainCTA />
-          </div>
-
+      </div>
+      
           {/* 功能特色 */}
           <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             <div className="bg-[#F5F3EF]/80 backdrop-blur rounded-xl p-6 shadow-lg">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
                 <MessageCircle className="text-blue-600" size={24} />
-              </div>
+                </div>
               <h3 className="text-lg font-semibold mb-2">智能對話</h3>
               <p className="text-gray-600">
                 自然語言提問，AI 即時分析股票技術面、籌碼面、基本面
@@ -104,6 +105,11 @@ export default function HomePage() {
                 根據投資偏好提供客製化建議，追蹤對話歷史
               </p>
             </div>
+          </div>
+
+          {/* 按鈕主色調選擇 */}
+          <div className="mt-12">
+            <ColorPreview />
           </div>
 
           {/* 快速開始提示 */}
