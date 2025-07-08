@@ -21,7 +21,7 @@ export default function HomePage() {
             placeholder="輸入問題..."
           />
           <button className="p-3 rounded-xl bg-primary text-white font-bold hover:bg-primary-hover transition flex items-center"><span role="img" aria-label="mic">🎤</span></button>
-          <button className="px-5 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary-hover transition">發送</button>
+          <button className="px-5 py-3 rounded-xl border border-primary text-primary font-semibold hover:bg-primary/10 transition">送出</button>
         </div>
       </section>
 
@@ -110,26 +110,6 @@ export default function HomePage() {
         </div>
         <button className="mt-2 px-4 py-2 rounded-xl bg-primary text-white font-bold hover:bg-primary-hover transition">更多問題...</button>
       </section>
-
-      {/* 底部導航 */}
-      <footer className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow z-30">
-        <div className="max-w-3xl mx-auto flex justify-between items-center px-6 py-2">
-          <div className="flex gap-6 text-2xl">
-            <button className="text-primary"><span role="img" aria-label="home">🏠</span></button>
-            <button><span role="img" aria-label="chat">💬</span></button>
-            <button><span role="img" aria-label="chart">📊</span></button>
-            <button><span role="img" aria-label="star">⭐</span></button>
-            <button><span role="img" aria-label="user">👤</span></button>
-          </div>
-          <div className="flex gap-2 text-xs text-gray-500">
-            <span>首頁</span>
-            <span>聊天</span>
-            <span>分析</span>
-            <span>收藏</span>
-            <span>我的</span>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
