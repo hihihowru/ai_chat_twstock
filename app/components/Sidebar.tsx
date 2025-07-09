@@ -7,9 +7,15 @@ import LoginModal from './LoginModal';
 interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
+  conversations?: Array<{
+    id: string;
+    question: string;
+    timestamp: Date;
+  }>;
+  onConversationClick?: (conversation: any) => void;
 }
 
-export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
+export default function Sidebar({ isOpen, onToggle, conversations = [], onConversationClick }: SidebarProps) {
   const [showLogin, setShowLogin] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userToken, setUserToken] = useState<string>("");
@@ -84,6 +90,27 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
               <span>自選股</span>
             </a>
           </div>
+
+          {/* Conversation History */}
+          {conversations.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold text-gray-600 mb-3">對話歷史</h3>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {conversations.map((conversation) => (
+                  <button
+                    key={conversation.id}
+                    onClick={() => onConversationClick?.(conversation)}
+                    className="w-full text-left p-3 rounded-lg hover:bg-[#E8E5E0]/50 transition-colors text-[#232323]"
+                  >
+                    <div className="text-sm font-medium truncate">{conversation.question}</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {conversation.timestamp.toLocaleString()}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </nav>
 
         {/* Bottom Section */}
