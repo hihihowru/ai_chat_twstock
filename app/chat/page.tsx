@@ -294,7 +294,10 @@ export default function ChatPage() {
         {/* Logo Area */}
         <div className="p-6 border-b border-gray-200/50">
           <h1 className="text-xl font-bold text-[#232323]">AI 投資助手</h1>
-          <p className="text-sm text-gray-600 mt-1">New Space</p>
+          <div className="mt-2 p-3 bg-[#E8E5E0]/50 rounded-lg">
+            <p className="text-sm font-medium text-[#232323]">New Space</p>
+            <p className="text-xs text-gray-600 mt-1">AI 投資分析對話空間</p>
+          </div>
         </div>
 
         {/* Navigation */}
@@ -357,7 +360,7 @@ export default function ChatPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col pt-16">
         {/* Chat Area */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="max-w-4xl mx-auto">
