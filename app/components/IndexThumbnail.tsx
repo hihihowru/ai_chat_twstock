@@ -36,7 +36,7 @@ export default function IndexThumbnail({
   onChartClick
 }: IndexThumbnailProps) {
   const isUp = change >= 0;
-  const changeColor = isUp ? 'text-green-600' : 'text-red-600';
+  const changeColor = isUp ? 'text-red-600' : 'text-green-600';
 
   return (
     <div 

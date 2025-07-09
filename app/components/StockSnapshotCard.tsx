@@ -58,8 +58,8 @@ export default function StockSnapshotCard({
       <div className="flex items-end gap-4">
         <div>
           <div className="text-3xl font-bold">${price.toFixed(2)}</div>
-          <div className={`text-sm font-bold ${isUp ? 'text-green-600' : 'text-red-500'}`}>{isUp ? '+' : ''}{change.toFixed(2)} ({isUp ? '+' : ''}{(changePercent * 100).toFixed(2)}%)</div>
-          <div className={`text-xs ${isAfterUp ? 'text-green-500' : 'text-red-400'}`}>盤後 {isAfterUp ? '+' : ''}{afterHours.toFixed(2)} ({isAfterUp ? '+' : ''}{(afterHoursPercent * 100).toFixed(2)}%)</div>
+          <div className={`text-sm font-bold ${isUp ? 'text-red-600' : 'text-green-500'}`}>{isUp ? '+' : ''}{change.toFixed(2)} ({isUp ? '+' : ''}{(changePercent * 100).toFixed(2)}%)</div>
+          <div className={`text-xs ${isAfterUp ? 'text-red-500' : 'text-green-400'}`}>盤後 {isAfterUp ? '+' : ''}{afterHours.toFixed(2)} ({isAfterUp ? '+' : ''}{(afterHoursPercent * 100).toFixed(2)}%)</div>
         </div>
         {/* 圖表區 Placeholder */}
         <div className="flex-1 flex flex-col items-end">
@@ -131,8 +131,8 @@ export function MediatekSnapshotCard() {
       <div className="flex items-end gap-4">
         <div>
           <div className="text-3xl font-bold">$1,200.50</div>
-          <div className="text-sm font-bold text-green-600">+15.00 (+1.27%)</div>
-          <div className="text-xs text-red-400">盤後 -2.00 (-0.17%)</div>
+          <div className="text-sm font-bold text-red-600">+15.00 (+1.27%)</div>
+          <div className="text-xs text-green-400">盤後 -2.00 (-0.17%)</div>
         </div>
         {/* 圖表區 Placeholder */}
         <div className="flex-1 flex flex-col items-end">
