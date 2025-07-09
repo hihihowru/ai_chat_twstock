@@ -1,8 +1,10 @@
 "use client";
 import React, { useRef, useState, useEffect } from 'react';
-import { Mic, Send } from 'lucide-react';
+import { Mic, Send, Menu, X, MessageCircle, TrendingUp, Settings, User, LogOut } from 'lucide-react';
 import { InvestmentReportCard, InvestmentSection } from '../components/InvestmentReportCard';
 import WatchlistSummaryCard from '../components/WatchlistSummaryCard';
+import AskQuestionBar from '../components/AskQuestionBar';
+import LoginModal from '../components/LoginModal';
 
 const sectionColors: Record<string, string> = {
   '📌 問題簡述與事件背景': 'bg-gray-100',
@@ -30,18 +32,20 @@ function isWatchlistSummaryQuestion(q: string) {
   return q.startsWith('自選股摘要:');
 }
 
-export default function MVPChatPage() {
+export default function ChatPage() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<{ role: 'user' | 'system' | 'log'; content: string; report?: any; sections?: any[] }[]>([]);
   const [loading, setLoading] = useState(false);
   const [showLogs, setShowLogs] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const [displayPrompt, setDisplayPrompt] = useState<string | null>(null);
   const [displayStockList, setDisplayStockList] = useState<string[]>([]);
   const [customGroups, setCustomGroups] = useState<any[]>([]);
   const [userId, setUserId] = useState<string>('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [hasTriggered, setHasTriggered] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const hasInitialized = useRef(false);
@@ -49,7 +53,7 @@ export default function MVPChatPage() {
   useEffect(() => {
     // 防止 React Strict Mode 重複執行
     if (hasInitialized.current) {
-      console.log('[MVP] useEffect 已經執行過，跳過重複執行');
+      console.log('[Chat] useEffect 已經執行過，跳過重複執行');
       return;
     }
     hasInitialized.current = true;
@@ -63,7 +67,7 @@ export default function MVPChatPage() {
     const url = new URL(window.location.href);
     const question = url.searchParams.get('question');
     const autoTrigger = url.searchParams.get('autoTrigger');
-    console.log('[MVP] useEffect 啟動, 取得 question:', question, 'autoTrigger:', autoTrigger);
+    console.log('[Chat] useEffect 啟動, 取得 question:', question, 'autoTrigger:', autoTrigger);
     if (question) {
       setInput(question);
       if (isWatchlistSummaryQuestion(question)) {
@@ -131,12 +135,12 @@ export default function MVPChatPage() {
   const handleSend = async (e?: React.FormEvent, questionText?: string) => {
     e?.preventDefault();
     const text = questionText || input;
-    console.log('[MVP] handleSend 啟動, text:', text);
+    console.log('[Chat] handleSend 啟動, text:', text);
     if (!text.trim()) return;
     
     // 防止重複請求
     if (isProcessing) {
-      console.log('[MVP] 正在處理中，跳過重複請求');
+      console.log('[Chat] 正在處理中，跳過重複請求');
       return;
     }
     
@@ -150,7 +154,7 @@ export default function MVPChatPage() {
     }
 
     if (isWatchlistSummaryQuestion(text)) {
-      console.log('[MVP] 判斷為自選股摘要問題，呼叫 handleWatchlistSummary');
+      console.log('[Chat] 判斷為自選股摘要問題，呼叫 handleWatchlistSummary');
       await handleWatchlistSummary(text);
     } else {
       // 處理一般問題
@@ -163,7 +167,7 @@ export default function MVPChatPage() {
   };
 
   const handleWatchlistSummary = async (question: string) => {
-    console.log('[MVP] handleWatchlistSummary 啟動, 問題:', question);
+    console.log('[Chat] handleWatchlistSummary 啟動, 問題:', question);
     try {
       // 解析股票清單
       const match = question.match(/\[(.*)\]/);
@@ -250,134 +254,199 @@ export default function MVPChatPage() {
     });
   };
 
-  const handleMic = () => {
-    alert('錄音功能開發中');
+  const handleLogin = async (token: string) => {
+    setIsLoggedIn(true);
+    setUserId('user');
+    setShowLogin(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('cmoney_token');
+    localStorage.removeItem('selected_custom_group');
+    localStorage.removeItem('custom_stock_list');
+    setIsLoggedIn(false);
+    setUserId('');
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-purple-100">
-      {/* Breadcrumb */}
-      <div className="px-4 pt-4 pb-2 text-xs text-gray-400 font-medium">/mvp</div>
-      {/* Chat area */}
-      <div className="flex-1 overflow-y-auto px-2 pb-32 sm:px-0">
-        <div className="max-w-4xl mx-auto flex flex-col gap-3 pt-2">
-          {/* 新增：顯示 prompt 與股票清單 */}
-          {displayPrompt && (
-            <div className="mb-2 text-blue-700 text-sm font-mono bg-blue-50 rounded px-3 py-2 w-fit max-w-full break-words shadow">
-              {displayPrompt}：[{displayStockList.join(', ')}]
+    <div className="min-h-screen bg-[#FAF7F3] flex">
+      {/* Sidebar Toggle Button */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="fixed top-4 left-4 z-50 p-2 bg-[#F0EDE8]/80 backdrop-blur rounded-lg shadow-lg hover:bg-[#E8E5E0]/80 transition-all"
+      >
+        {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+      </button>
+
+      {/* Sidebar Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/20 z-40"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={`fixed left-0 top-0 h-full w-64 bg-[#F0EDE8]/90 backdrop-blur-md border-r border-gray-200/50 z-50 transform transition-transform duration-300 ease-in-out ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        
+        {/* Logo Area */}
+        <div className="p-6 border-b border-gray-200/50">
+          <h1 className="text-xl font-bold text-[#232323]">AI 投資助手</h1>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 p-4">
+          <div className="space-y-2">
+            <a 
+              href="/" 
+              className="flex items-center space-x-3 p-3 rounded-lg hover:bg-[#E8E5E0]/50 transition-colors text-[#232323]"
+            >
+              <MessageCircle size={20} />
+              <span>首頁</span>
+            </a>
+            
+            <a 
+              href="/watchlist" 
+              className="flex items-center space-x-3 p-3 rounded-lg hover:bg-[#E8E5E0]/50 transition-colors text-[#232323]"
+            >
+              <TrendingUp size={20} />
+              <span>自選股</span>
+            </a>
+          </div>
+        </nav>
+
+        {/* Bottom Section */}
+        <div className="p-4 border-t border-gray-200/50">
+          {/* User Section */}
+          {isLoggedIn ? (
+            <div className="space-y-2">
+              <div className="flex items-center space-x-3 p-3 rounded-lg bg-[#E8E5E0]/30">
+                <User size={20} />
+                <span className="text-[#232323] font-medium">已登入</span>
+              </div>
+              
+              <button 
+                onClick={() => {/* 未來設定頁面 */}}
+                className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-[#E8E5E0]/50 transition-colors text-[#232323]"
+              >
+                <Settings size={20} />
+                <span>設定</span>
+              </button>
+              
+              <button 
+                onClick={handleLogout}
+                className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-[#E8E5E0]/50 transition-colors text-[#232323]"
+              >
+                <LogOut size={20} />
+                <span>登出</span>
+              </button>
             </div>
+          ) : (
+            <button 
+              onClick={() => setShowLogin(true)}
+              className="w-full flex items-center justify-center space-x-2 p-3 bg-[#FFB86B] text-white rounded-lg hover:bg-[#FFA54F] transition-colors font-medium"
+            >
+              <User size={20} />
+              <span>會員登入</span>
+            </button>
           )}
-          {messages.map((msg, idx) =>
-            msg.role === 'user' ? (
-              <div key={idx} className="flex w-full">
-                <div className="bg-blue-500 text-white rounded-2xl px-4 py-2 max-w-[85vw] sm:max-w-[70%] text-sm break-words shadow ml-auto mr-0 text-right">
-                  {msg.content}
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <div className="p-6 border-b border-gray-200/50">
+          <h1 className="text-2xl font-bold text-[#232323]">New Space</h1>
+          <p className="text-gray-600 mt-1">AI 投資分析對話空間</p>
+        </div>
+
+        {/* Chat Area */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="max-w-4xl mx-auto">
+            {/* 顯示 prompt 與股票清單 */}
+            {displayPrompt && (
+              <div className="mb-4 text-blue-700 text-sm font-mono bg-blue-50 rounded-lg px-4 py-3 w-fit max-w-full break-words shadow-sm">
+                {displayPrompt}：[{displayStockList.join(', ')}]
+              </div>
+            )}
+            
+            {/* Messages */}
+            {messages.map((msg, idx) =>
+              msg.role === 'user' ? (
+                <div key={idx} className="flex w-full mb-4">
+                  <div className="bg-blue-500 text-white rounded-2xl px-4 py-3 max-w-[85%] text-sm break-words shadow-sm ml-auto">
+                    {msg.content}
+                  </div>
                 </div>
-              </div>
-            ) : msg.role === 'system' && msg.content === 'report' ? (
-              <div key={idx} className="mt-6">
-                <InvestmentReportCard
-                  stockName={msg.report.stockName}
-                  stockId={msg.report.stockId}
-                  sections={msg.report.sections}
-                  paraphrased_prompt={msg.report.paraphrased_prompt}
-                  logs={msg.report.logs}
-                  onBookmark={() => alert('收藏功能開發中')}
-                />
-              </div>
-            ) : msg.role === 'system' && msg.content === 'watchlist_summary' ? (
-              <div key={idx} className="mt-6">
-                <WatchlistSummaryCard sections={msg.sections || []} />
-                {(!msg.sections || msg.sections.length === 0) && (
-                  <div className="text-center text-gray-400 py-8">暫無內容</div>
+              ) : msg.role === 'system' && msg.content === 'report' ? (
+                <div key={idx} className="mb-6">
+                  <InvestmentReportCard
+                    stockName={msg.report.stockName}
+                    stockId={msg.report.stockId}
+                    sections={msg.report.sections}
+                    paraphrased_prompt={msg.report.paraphrased_prompt}
+                    logs={msg.report.logs}
+                    onBookmark={() => alert('收藏功能開發中')}
+                  />
+                </div>
+              ) : msg.role === 'system' && msg.content === 'watchlist_summary' ? (
+                <div key={idx} className="mb-6">
+                  <WatchlistSummaryCard sections={msg.sections || []} />
+                  {(!msg.sections || msg.sections.length === 0) && (
+                    <div className="text-center text-gray-400 py-8">暫無內容</div>
+                  )}
+                </div>
+              ) : msg.role === 'system' ? (
+                <div key={idx} className="flex w-full mb-4">
+                  <div className="bg-white/70 backdrop-blur text-gray-900 rounded-2xl px-4 py-3 max-w-[85%] text-sm break-words shadow-sm">
+                    {msg.content}
+                  </div>
+                </div>
+              ) : null
+            )}
+            
+            {/* Log Container */}
+            <div className="w-full flex justify-center mt-4">
+              <button
+                className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-sm font-medium shadow-sm transition-colors"
+                onClick={() => setShowLogs(v => !v)}
+                type="button"
+              >
+                {showLogs ? '隱藏分析進度' : '查看分析進度'}
+              </button>
+            </div>
+            
+            {showLogs && (
+              <div className="w-full max-w-2xl mx-auto mt-4 max-h-60 overflow-y-auto text-xs text-gray-600 bg-white/50 rounded-lg p-4">
+                {messages.filter(msg => msg.role === 'log').length === 0 ? (
+                  <div className="text-gray-400">目前沒有分析進度</div>
+                ) : (
+                  messages.filter(msg => msg.role === 'log').map((msg, idx) => (
+                    <div key={idx} className="mb-1">{msg.content}</div>
+                  ))
                 )}
               </div>
-            ) : msg.role === 'system' ? (
-              <div key={idx} className="flex w-full">
-                <div className="bg-white/70 backdrop-blur text-gray-900 rounded-2xl px-4 py-2 max-w-[85vw] sm:max-w-[70%] text-sm break-words shadow ml-0 mr-auto text-left">
-                  {msg.content}
-                </div>
-              </div>
-            ) : null
-          )}
-          {/* Log Container - 集中顯示所有 log 訊息 */}
-          <div className="w-full flex justify-center mt-2">
-            <button
-              className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 text-xs font-medium shadow"
-              onClick={() => setShowLogs(v => !v)}
-              type="button"
-            >
-              {showLogs ? '隱藏分析進度' : '查看分析進度'}
-            </button>
+            )}
+            
+            <div ref={bottomRef} />
           </div>
-          {showLogs && (
-            <div className="w-full max-w-2xl mx-auto mt-2 max-h-60 overflow-y-auto text-xs text-gray-600">
-              {messages.filter(msg => msg.role === 'log').length === 0 ? (
-                <div className="text-gray-400">目前沒有分析進度</div>
-              ) : (
-                messages.filter(msg => msg.role === 'log').map((msg, idx) => (
-                  <div key={idx} className="mb-1">{msg.content}</div>
-                ))
-              )}
-            </div>
-          )}
-          <div ref={bottomRef} />
+        </div>
+
+        {/* Input Bar */}
+        <div className="p-6 border-t border-gray-200/50">
+          <AskQuestionBar onSubmit={(question) => handleSend(undefined, question)} />
         </div>
       </div>
-      {/* Input bar */}
-      <form
-        className="fixed bottom-0 left-0 right-0 z-50 bg-white/80 backdrop-blur border-t border-gray-200 flex items-center px-2 py-2 sm:justify-center"
-        onSubmit={handleSend}
-      >
-        <div className="w-full max-w-md flex gap-2 items-center">
-          <input
-            className="flex-1 bg-white/70 rounded-xl px-4 py-2 text-sm outline-none border border-gray-200 focus:border-blue-400 transition"
-            type="text"
-            placeholder="輸入提問、股票名稱或代號..."
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            disabled={loading}
-          />
-          <button
-            type="button"
-            className="p-2 rounded-xl bg-gray-100 text-gray-500 hover:bg-blue-100 hover:text-blue-600 transition"
-            onClick={handleMic}
-            tabIndex={-1}
-            aria-label="錄音"
-          >
-            <Mic size={20} />
-          </button>
-          <button
-            type="submit"
-            className="p-2 rounded-xl bg-blue-600 text-white font-bold text-sm shadow hover:bg-blue-700 transition disabled:opacity-60"
-            disabled={loading}
-            aria-label="送出"
-          >
-            <Send size={20} />
-          </button>
-        </div>
-      </form>
-      {/* 右上角顯示登入後的按鈕 */}
-      <div className="absolute top-4 right-4 z-50">
-        {isLoggedIn && (
-          <div className="flex items-center gap-2">
-            <span className="text-blue-700 font-bold">已登入</span>
-            <button
-              className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 text-xs font-medium shadow"
-              onClick={() => window.location.href = '/watchlist'}
-              type="button"
-            >
-              選擇自選股清單
-            </button>
-          </div>
-        )}
-      </div>
-      {/* 中間置中顯示『目前沒有分析進度』 */}
-      {messages.length === 0 && !loading && (
-        <div className="w-full flex justify-center items-center h-64">
-          <div className="text-gray-400 text-lg">目前沒有分析進度</div>
-        </div>
-      )}
+
+      {/* Login Modal */}
+      <LoginModal 
+        isOpen={showLogin} 
+        onClose={() => setShowLogin(false)} 
+        onLogin={handleLogin} 
+      />
     </div>
   );
 } 

@@ -79,7 +79,7 @@ export default function Sidebar({ isOpen, onToggle, conversations = [], onConver
               className="flex items-center space-x-3 p-3 rounded-lg hover:bg-[#E8E5E0]/50 transition-colors text-[#232323]"
             >
               <MessageCircle size={20} />
-              <span>AI 聊天</span>
+              <span>New Space</span>
             </a>
             
             <a 

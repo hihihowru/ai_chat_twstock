@@ -8,7 +8,7 @@ import TabSelector from './components/TabSelector';
 import WatchlistPrompt from './components/WatchlistPrompt';
 import Sidebar from './components/Sidebar';
 import AskQuestionBar from './components/AskQuestionBar';
-import ConversationModal from './components/ConversationModal';
+
 import { mockWatchlistData, mockIndexData, mockHotStocksData } from './data/mockData';
 import { useUserSystem } from './hooks/useUserSystem';
 
@@ -37,11 +37,7 @@ export default function HomePage() {
 
   // 對話相關狀態
   const [input, setInput] = useState('');
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [eventSource, setEventSource] = useState<EventSource | null>(null);
 
   const watchlistTabs = Object.keys(mockWatchlistData);
   const hotStocksTabs = Object.keys(mockHotStocksData);
@@ -69,126 +65,15 @@ export default function HomePage() {
       return;
     }
 
-    setIsProcessing(true);
-    setInput('');
-
-    // 關閉舊的 SSE 連線
-    if (eventSource) {
-      eventSource.close();
-    }
-
-    let responseData: any = null;
-    let conversationId = Date.now().toString();
-
-    try {
-      // 連接到後端 SSE API
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
-      const url = `${apiBaseUrl}/api/ask-sse?question=${encodeURIComponent(text)}`;
-      console.log('Connecting to SSE:', url);
-      
-      const es = new EventSource(url);
-      setEventSource(es);
-
-      es.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log('SSE message received:', data);
-          
-          if (data.log) {
-            // Store log messages for debugging
-            console.log('Log:', data.log);
-          }
-          if (data.report) {
-            // Store the complete response
-            responseData = data.report;
-            console.log('Complete response:', responseData);
-            
-            // Create conversation object
-            const conversation: Conversation = {
-              id: conversationId,
-              question: text,
-              response: responseData,
-              timestamp: new Date()
-            };
-            
-            // Add to conversations list
-            setConversations(prev => [conversation, ...prev]);
-            
-            // Open modal with the conversation
-            setCurrentConversation(conversation);
-            setIsModalOpen(true);
-            
-            setIsProcessing(false);
-            es.close();
-          }
-        } catch (err) {
-          console.error('SSE 數據解析錯誤:', err);
-        }
-      };
-
-      es.onerror = (error) => {
-        console.error('SSE 連接錯誤:', error);
-        es.close();
-        setIsProcessing(false);
-        
-        // Create error conversation
-        const errorConversation: Conversation = {
-          id: conversationId,
-          question: text,
-          response: '連接錯誤，請稍後再試',
-          timestamp: new Date()
-        };
-        
-        setConversations(prev => [errorConversation, ...prev]);
-        setCurrentConversation(errorConversation);
-        setIsModalOpen(true);
-      };
-
-      es.addEventListener('end', () => {
-        console.log('SSE 連接結束');
-        es.close();
-        setIsProcessing(false);
-      });
-
-    } catch (error) {
-      console.error('提交問題時發生錯誤:', error);
-      setIsProcessing(false);
-      
-      // Create error conversation
-      const errorConversation: Conversation = {
-        id: conversationId,
-        question: text,
-        response: '發生錯誤，請稍後再試',
-        timestamp: new Date()
-      };
-      
-      setConversations(prev => [errorConversation, ...prev]);
-      setCurrentConversation(errorConversation);
-      setIsModalOpen(true);
-    }
-  };
-
-  // 處理對話歷史點擊
-  const handleConversationClick = (conversation: Conversation) => {
-    setCurrentConversation(conversation);
-    setIsModalOpen(true);
+    // 跳轉到 chat 頁面並傳遞問題
+    const chatUrl = `/chat?question=${encodeURIComponent(text)}&autoTrigger=true`;
+    window.location.href = chatUrl;
   };
 
   // 處理語音輸入
   const handleMic = () => {
     alert('語音輸入功能開發中');
   };
-
-
-
-  // 清理 SSE 連線
-  useEffect(() => {
-    return () => {
-      if (eventSource) {
-        eventSource.close();
-      }
-    };
-  }, [eventSource]);
 
   if (isLoading) {
     return (
@@ -204,12 +89,10 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#FAF7F3]">
       {/* Sidebar */}
-      <Sidebar 
-        isOpen={sidebarOpen} 
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-        conversations={conversations}
-        onConversationClick={handleConversationClick}
-      />
+              <Sidebar 
+          isOpen={sidebarOpen} 
+          onToggle={() => setSidebarOpen(!sidebarOpen)}
+        />
 
       {/* 主要內容區域 */}
       <div className="flex flex-col">
@@ -424,12 +307,7 @@ export default function HomePage() {
       {/* 固定底部提問欄 */}
       <AskQuestionBar onSubmit={(question) => handleSubmit(undefined, question)} />
 
-      {/* Conversation Modal */}
-      <ConversationModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        conversation={currentConversation}
-      />
+
     </div>
   );
 }
