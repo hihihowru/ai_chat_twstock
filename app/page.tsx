@@ -109,7 +109,7 @@ export default function HomePage() {
         </header>
 
         {/* 今天想了解什麼？輸入區 */}
-        <section className="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow p-6 flex flex-col items-center mb-8">
+        <section className="w-full max-w-2xl mx-auto flex flex-col items-center mb-8">
           <div className="w-full text-lg font-semibold mb-3 flex items-center gap-2">
             <MessageCircle size={20} />
             今天想了解什麼？
@@ -122,7 +122,7 @@ export default function HomePage() {
             }}
           >
             <input
-              className="flex-1 px-4 py-3 rounded-xl border border-gray-200 bg-[#FAF7F3] text-base outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-4 py-3 rounded-xl border border-gray-200 bg-white text-base outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="輸入問題..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
