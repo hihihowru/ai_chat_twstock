@@ -45,8 +45,8 @@ export default function StockThumbnail({
     >
       {/* Header: 股票名稱和代碼 */}
       <div className="flex justify-between items-start mb-2">
-        <div className="font-semibold text-sm text-gray-900">{name}</div>
         <div className="font-medium text-xs text-gray-500">{code}</div>
+        <div className="font-semibold text-sm text-gray-900">{name}</div>
       </div>
 
       {/* Info: 價格、漲跌幅和產業 */}

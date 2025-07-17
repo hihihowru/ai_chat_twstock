@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { X, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { getGoogleAuthUrl } from '../lib/auth';
-import { useUser } from '../hooks/UserContext';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -15,7 +14,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login } = useUser();
 
   const handleEmailLogin = async () => {
     setLoading(true);
@@ -36,7 +34,15 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
       const data = await res.json();
       if (data.access_token) {
         localStorage.setItem('cmoney_token', data.access_token);
-        await login({ name: account, email: account }, data.access_token);
+        // Store user data in localStorage for now
+        const userData = {
+          id: Date.now().toString(),
+          name: account,
+          email: account,
+          createdAt: new Date().toISOString()
+        };
+        localStorage.setItem('cmoney_user', JSON.stringify(userData));
+        
         setTimeout(() => {
           onLogin(data.access_token);
           onClose();
@@ -87,8 +93,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
           <h2 className="text-2xl font-bold text-gray-900 mb-2">歡迎回來</h2>
           <p className="text-gray-600">登入您的帳戶以繼續使用</p>
         </div>
-
-
 
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-4">

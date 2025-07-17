@@ -29,7 +29,7 @@ interface ReportData {
 }
 
 function isWatchlistSummaryQuestion(q: string) {
-  return q.startsWith('自選股摘要:');
+  return q.startsWith('自選股摘要:') || q.startsWith('自選股分析報告:');
 }
 
 export default function ChatPage() {

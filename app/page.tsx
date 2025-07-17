@@ -75,7 +75,7 @@ export default function HomePage() {
         if (data.Group && Array.isArray(data.Group) && data.Group.length > 0) {
           setCustomGroups(data.Group);
           setCustomGroup(data.Group[0]);
-        } else {
+      } else {
           setCustomGroups([]);
           setCustomGroup(null);
           setGroupError('API 無自選股資料');
@@ -261,20 +261,26 @@ export default function HomePage() {
                 <div className="text-center text-gray-400 py-8">自選股載入中...</div>
               ) : customGroup && customGroup.ItemList && customGroup.ItemList.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {customGroup.ItemList.map((stockId: string, index: number) => (
-                    <StockThumbnail
-                      key={stockId}
-                      name={stockAlias[stockId]?.[1] || stockId}
-                      code={stockId}
-                      price={0}
-                      change={0}
-                      changePercent={0}
-                      industry={''}
-                      chartData={[]}
-                      onClick={() => handleSubmit(undefined, `${stockAlias[stockId]?.[1] || stockId}今天表現如何？`)}
-                      onChartClick={() => {}}
-                    />
-                  ))}
+                  {customGroup.ItemList.map((stockId: string, index: number) => {
+                    // 取得股票簡稱：找到第一個不是股票代號的元素
+                    const aliases = stockAlias[stockId] || [];
+                    const stockName = aliases.find(alias => alias !== stockId) || stockId;
+                    
+                    return (
+                      <StockThumbnail
+                        key={stockId}
+                        name={stockName}
+                        code={stockId}
+                        price={0}
+                        change={0}
+                        changePercent={0}
+                        industry={''}
+                        chartData={[]}
+                        onClick={() => handleSubmit(undefined, `${stockName}今天表現如何？`)}
+                        onChartClick={() => {}}
+                      />
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center text-gray-400 py-8">尚無自選股</div>
@@ -348,9 +354,9 @@ export default function HomePage() {
                   window.location.href = chatUrl;
                 }}
               />
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
 
         {/* 熱門話題 */}
         <section className="w-full max-w-5xl mx-auto mb-8">
@@ -377,10 +383,10 @@ export default function HomePage() {
               <div className="flex items-center gap-2 mb-2">
                 <TrendingUp size={16} className="text-[#B97A57]" />
                 <span className="text-sm font-medium text-gray-600">半導體</span>
-              </div>
+        </div>
               <h3 className="font-semibold text-gray-900 mb-1">半導體產業復甦</h3>
               <p className="text-sm text-gray-600">庫存調整結束，需求回溫帶動股價上漲</p>
-            </div>
+      </div>
             <div className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => {
               const chatUrl = `/chat?question=${encodeURIComponent('金融股今天表現如何？')}&autoTrigger=true`;
               window.location.href = chatUrl;
@@ -388,7 +394,7 @@ export default function HomePage() {
               <div className="flex items-center gap-2 mb-2">
                 <TrendingDown size={16} className="text-red-500" />
                 <span className="text-sm font-medium text-gray-600">金融股</span>
-              </div>
+                </div>
               <h3 className="font-semibold text-gray-900 mb-1">金融股小幅回調</h3>
               <p className="text-sm text-gray-600">市場觀望氣氛濃厚，金融股表現相對保守</p>
             </div>
