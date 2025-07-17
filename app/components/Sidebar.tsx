@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Menu, X, MessageCircle, TrendingUp, Settings, User, LogOut } from 'lucide-react';
 import LoginModal from './LoginModal';
+import { useUser } from '../hooks/UserContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -15,33 +16,8 @@ interface SidebarProps {
   onConversationClick?: (conversation: any) => void;
 }
 
-export default function Sidebar({ isOpen, onToggle, conversations = [], onConversationClick }: SidebarProps) {
-  const [showLogin, setShowLogin] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userToken, setUserToken] = useState<string>("");
-
-  useEffect(() => {
-    // 檢查登入狀態
-    const token = localStorage.getItem('cmoney_token');
-    if (token) {
-      setIsLoggedIn(true);
-      setUserToken(token);
-    }
-  }, []);
-
-  const handleLogin = async (token: string) => {
-    setIsLoggedIn(true);
-    setUserToken(token);
-    setShowLogin(false);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('cmoney_token');
-    localStorage.removeItem('selected_custom_group');
-    localStorage.removeItem('custom_stock_list');
-    setIsLoggedIn(false);
-    setUserToken('');
-  };
+export default function Sidebar({ isOpen, onToggle, conversations = [], onConversationClick, onLoginClick }: SidebarProps & { onLoginClick?: () => void }) {
+  const { isLoggedIn, logout } = useUser();
 
   return (
     <>
@@ -140,7 +116,7 @@ export default function Sidebar({ isOpen, onToggle, conversations = [], onConver
               </button>
               
               <button 
-                onClick={handleLogout}
+                onClick={logout}
                 className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-[#E8E5E0]/50 transition-colors text-[#232323]"
               >
                 <LogOut size={20} />
@@ -149,8 +125,8 @@ export default function Sidebar({ isOpen, onToggle, conversations = [], onConver
             </div>
           ) : (
             <button 
-              onClick={() => setShowLogin(true)}
-              className="w-full flex items-center justify-center space-x-2 p-3 bg-[#FFB86B] text-white rounded-lg hover:bg-[#FFA54F] transition-colors font-medium"
+              onClick={onLoginClick}
+              className="w-full flex items-center justify-center space-x-2 p-3 bg-[#B97A57]/80 hover:bg-[#B97A57] text-white rounded-xl shadow-md transition-all font-semibold"
             >
               <User size={20} />
               <span>會員登入</span>
@@ -158,13 +134,6 @@ export default function Sidebar({ isOpen, onToggle, conversations = [], onConver
           )}
         </div>
       </div>
-
-      {/* Login Modal */}
-      <LoginModal 
-        isOpen={showLogin} 
-        onClose={() => setShowLogin(false)} 
-        onLogin={handleLogin} 
-      />
     </>
   );
 } 

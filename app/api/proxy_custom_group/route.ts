@@ -1,39 +1,47 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-export async function POST(request: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const body = await request.text();
-    const authHeader = request.headers.get('authorization');
-    
-    // 使用 API_BASE_URL，production 必須是 https:// 開頭
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
-    
-    // 轉發到後端 API
-    const backendResponse = await fetch(`${API_BASE_URL}/api/proxy_custom_group`, {
+    const body = await req.text();
+    const headers = Object.fromEntries(req.headers.entries());
+    console.log('proxy_custom_group: received body:', body);
+    console.log('proxy_custom_group: received headers:', headers);
+
+    // Debug: 檢查環境變數
+    console.log('CMONEY_API_BASE_URL:', process.env.CMONEY_API_BASE_URL);
+    console.log('All env vars:', Object.keys(process.env).filter(key => key.includes('CMONEY')));
+
+    // 準備完整 URL
+    const url = process.env.CMONEY_API_BASE_URL + '/CustomGroup.ashx';
+    console.log('即將 fetch CMoney API，完整 URL:', url);
+    console.log('即將 fetch CMoney API，headers:', {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': headers['authorization'] || ''
+    });
+    console.log('即將 fetch CMoney API，body:', body);
+
+    // 轉發到 CMoney API
+    const cmoneyRes = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        ...(authHeader && { 'Authorization': authHeader }),
+        'Authorization': headers['authorization'] || ''
       },
-      body: body,
+      body
     });
-
-    if (!backendResponse.ok) {
-      const errorData = await backendResponse.json();
-      return NextResponse.json(errorData, { status: backendResponse.status });
+    const text = await cmoneyRes.text();
+    console.log('CMoney API 回傳原始內容:', text);
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error('proxy_custom_group: CMoney API response not JSON:', text);
+      data = { error: 'CMoney API response not JSON', raw: text };
     }
-
-    const data = await backendResponse.json();
+    console.log('proxy_custom_group: CMoney API response:', data);
     return NextResponse.json(data);
-
-  } catch (error) {
-    console.error('Error in proxy_custom_group API:', error);
-    return NextResponse.json(
-      { 
-        error: 'internal_server_error',
-        error_description: '取得自選股群組時發生錯誤'
-      },
-      { status: 500 }
-    );
+  } catch (e) {
+    console.error('proxy_custom_group error:', e);
+    return NextResponse.json({ error: 'proxy error', detail: String(e) }, { status: 500 });
   }
 } 

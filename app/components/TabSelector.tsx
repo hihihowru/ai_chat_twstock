@@ -23,8 +23,8 @@ export default function TabSelector({
           onClick={() => onTabChange(tab)}
           className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
             activeTab === tab
-              ? 'bg-blue-600 text-white shadow-md'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-[#B97A57]/80 text-white shadow-md'
+              : 'bg-gray-100 text-gray-700 hover:bg-[#B97A57]/10'
           }`}
         >
           {tab}

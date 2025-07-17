@@ -16,14 +16,16 @@ export function useUserSystem() {
 
   useEffect(() => {
     // Check for existing user in localStorage
-    const savedUser = localStorage.getItem('cmoney_user');
-    if (savedUser) {
-      try {
-        const userData = JSON.parse(savedUser);
-        setUser(userData);
-      } catch (error) {
-        console.error('Error parsing saved user:', error);
-        localStorage.removeItem('cmoney_user');
+    if (typeof window !== 'undefined') {
+      const savedUser = localStorage.getItem('cmoney_user');
+      if (savedUser) {
+        try {
+          const userData = JSON.parse(savedUser);
+          setUser(userData);
+        } catch (error) {
+          console.error('Error parsing saved user:', error);
+          localStorage.removeItem('cmoney_user');
+        }
       }
     }
     setIsLoading(false);

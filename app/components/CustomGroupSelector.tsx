@@ -66,7 +66,7 @@ const CustomGroupSelector: React.FC<CustomGroupSelectorProps> = ({
             {groups.map((group, index) => (
               <div
                 key={group.DocNo}
-                className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
+                className="border border-gray-200 rounded-lg p-4 hover:border-[#B97A57] hover:shadow-md transition-all cursor-pointer"
                 onClick={async () => {
                   console.log('[CustomGroupSelector] 點擊自選股清單');
                   console.log('[CustomGroupSelector] 清單名稱:', group.DocName);
@@ -84,7 +84,7 @@ const CustomGroupSelector: React.FC<CustomGroupSelectorProps> = ({
                   <h3 className="text-lg font-semibold text-gray-800">
                     {group.DocName}
                   </h3>
-                  <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded">
+                  <span className="bg-[#B97A57]/20 text-[#B97A57] text-xs font-medium px-2 py-1 rounded">
                     {group.ItemList.length} 檔股票
                   </span>
                 </div>
@@ -120,7 +120,7 @@ const CustomGroupSelector: React.FC<CustomGroupSelectorProps> = ({
         <div className="mt-6 flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+            className="px-4 py-2 bg-[#B97A57]/80 hover:bg-[#B97A57] text-white rounded-xl shadow-md transition-all font-semibold"
           >
             取消
           </button>

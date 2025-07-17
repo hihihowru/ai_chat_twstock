@@ -87,14 +87,14 @@ const HeaderWithLogin: React.FC = () => {
     <>
       <header className="w-full flex justify-end p-4 bg-white/80 backdrop-blur border-b">
         {!isLoggedIn ? (
-          <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onClick={() => setShowLogin(true)}>
+          <button className="px-4 py-2 bg-[#B97A57]/80 hover:bg-[#B97A57] text-white rounded-xl shadow-md transition-all font-semibold" onClick={() => setShowLogin(true)}>
             會員登入
           </button>
         ) : (
           <div className="flex items-center gap-4">
-            <span className="text-blue-600 font-bold">已登入</span>
+            <span className="text-[#B97A57] font-bold">已登入</span>
             <button 
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="px-4 py-2 bg-[#B97A57]/80 hover:bg-[#B97A57] text-white rounded-xl shadow-md transition-all font-semibold"
               onClick={() => setShowCustomGroupSelector(true)}
             >
               選擇自選股清單

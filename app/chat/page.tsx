@@ -51,9 +51,10 @@ export default function ChatPage() {
   const hasInitialized = useRef(false);
 
   useEffect(() => {
+    console.log('[Chat][DEBUG] useEffect 啟動');
     // 防止 React Strict Mode 重複執行
     if (hasInitialized.current) {
-      console.log('[Chat] useEffect 已經執行過，跳過重複執行');
+      console.log('[Chat][DEBUG] useEffect 已經執行過，跳過重複執行');
       return;
     }
     hasInitialized.current = true;
@@ -67,7 +68,7 @@ export default function ChatPage() {
     const url = new URL(window.location.href);
     const question = url.searchParams.get('question');
     const autoTrigger = url.searchParams.get('autoTrigger');
-    console.log('[Chat] useEffect 啟動, 取得 question:', question, 'autoTrigger:', autoTrigger);
+    console.log('[Chat][DEBUG] 取得 question:', question, 'autoTrigger:', autoTrigger);
     if (question) {
       setInput(question);
       if (isWatchlistSummaryQuestion(question)) {
@@ -91,6 +92,7 @@ export default function ChatPage() {
       }
       // 只在 autoTrigger=true 時觸發分析
       if (autoTrigger === 'true') {
+        console.log('[Chat][DEBUG] autoTrigger=true，準備觸發 handleSend');
         setHasTriggered(true);
         setIsProcessing(true);
         setTimeout(() => {
@@ -135,12 +137,12 @@ export default function ChatPage() {
   const handleSend = async (e?: React.FormEvent, questionText?: string) => {
     e?.preventDefault();
     const text = questionText || input;
-    console.log('[Chat] handleSend 啟動, text:', text);
+    console.log('[Chat][DEBUG] handleSend 啟動, text:', text, 'isProcessing:', isProcessing);
     if (!text.trim()) return;
     
     // 防止重複請求
     if (isProcessing) {
-      console.log('[Chat] 正在處理中，跳過重複請求');
+      console.log('[Chat][DEBUG] 正在處理中，跳過重複請求');
       return;
     }
     
@@ -154,9 +156,10 @@ export default function ChatPage() {
     }
 
     if (isWatchlistSummaryQuestion(text)) {
-      console.log('[Chat] 判斷為自選股摘要問題，呼叫 handleWatchlistSummary');
+      console.log('[Chat][DEBUG] 判斷為自選股摘要問題，呼叫 handleWatchlistSummary');
       await handleWatchlistSummary(text);
     } else {
+      console.log('[Chat][DEBUG] 處理一般問題，呼叫 handleGeneralQuestion');
       // 處理一般問題
       await handleGeneralQuestion(text);
     }
@@ -167,7 +170,7 @@ export default function ChatPage() {
   };
 
   const handleWatchlistSummary = async (question: string) => {
-    console.log('[Chat] handleWatchlistSummary 啟動, 問題:', question);
+    console.log('[Chat][DEBUG] handleWatchlistSummary 啟動, 問題:', question);
     try {
       // 解析股票清單
       const match = question.match(/\[(.*)\]/);
@@ -222,13 +225,15 @@ export default function ChatPage() {
   };
 
   const handleGeneralQuestion = async (question: string) => {
-    // 串接 SSE API
+    console.log('[Chat][DEBUG] handleGeneralQuestion 啟動, 問題:', question);
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     const url = `${apiBaseUrl}/api/ask-sse?question=${encodeURIComponent(question)}`;
+    console.log('[Chat][DEBUG] SSE 連線 URL:', url);
     const es = new EventSource(url);
     eventSourceRef.current = es;
 
     es.onmessage = (event) => {
+      console.log('[Chat][DEBUG] SSE onmessage:', event.data);
       try {
         const data = JSON.parse(event.data);
         if (data.log) {
@@ -242,12 +247,14 @@ export default function ChatPage() {
         // 忽略解析錯誤
       }
     };
-    es.onerror = () => {
+    es.onerror = (err) => {
+      console.log('[Chat][DEBUG] SSE onerror:', err);
       es.close();
       setLoading(false);
       setIsProcessing(false);
     };
     es.addEventListener('end', () => {
+      console.log('[Chat][DEBUG] SSE end event');
       es.close();
       setLoading(false);
       setIsProcessing(false);
@@ -350,7 +357,7 @@ export default function ChatPage() {
           ) : (
             <button 
               onClick={() => setShowLogin(true)}
-              className="w-full flex items-center justify-center space-x-2 p-3 bg-[#FFB86B] text-white rounded-lg hover:bg-[#FFA54F] transition-colors font-medium"
+              className="w-full flex items-center justify-center space-x-2 p-3 bg-[#B97A57]/80 hover:bg-[#B97A57] text-white rounded-xl shadow-md transition-all font-semibold"
             >
               <User size={20} />
               <span>會員登入</span>
@@ -365,11 +372,6 @@ export default function ChatPage() {
         <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="max-w-4xl mx-auto">
             {/* 顯示 prompt 與股票清單 */}
-            {displayPrompt && (
-              <div className="mb-4 text-blue-700 text-sm font-mono bg-blue-50 rounded-lg px-4 py-3 w-fit max-w-full break-words shadow-sm">
-                {displayPrompt}：[{displayStockList.join(', ')}]
-              </div>
-            )}
             
             {/* Messages */}
             {messages.map((msg, idx) =>
